@@ -71,10 +71,10 @@ for i in range(SZ):
         tag2 = tag_pq[j]
         
         if tag_weighted_graph[tag1].get(tag2) == None:
-            aff_mat[i][j] = 5
-            continue
-
-        aff_mat[i][j] = 1 - 1 / (1 + np.exp(-tag_weighted_graph[tag1][tag2]/100))
+            x = 1e10
+        else:
+            x = 1/tag_weighted_graph[tag1][tag2]
+        aff_mat[i][j] = x
 
 
 lapEig = 7
@@ -194,7 +194,7 @@ Y = (Y - y_min)/(y_max - y_min)
 for i in range(Y.shape[0]):
     if i < SZ:
         #plt.text(Y[i,0], Y[i,1], tag_pq[i], FontProperties = fontprop_main, color = (0,0,0))
-        plt.plot(Y[i,0], Y[i,1], 'o')
+        plt.plot(Y[i,0], Y[i,1], 'bo')
         continue
     if i >= SZ:
         #plt.text(Y[i,0], Y[i,1], song_name[i-SZ], FontProperties = fontprop, color = (1,0,0))

@@ -1,3 +1,11 @@
 NN/data.json
 song_meta.json
 song_vec.json
+*.iml
+*.xml
+.vs/ProjectSettings.json
+.vs/slnx.sqlite
+.vs/Eternal_Cat/v15/.suo
+.vs/Eternal_Cat/v15/Browse.VC.db
+.vs/VSWorkspaceState.json
+tag_vec.json
