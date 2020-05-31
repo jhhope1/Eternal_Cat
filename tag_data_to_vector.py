@@ -119,14 +119,14 @@ while True:
 f1.close()
 
 i = 0
-with open('song_vec', 'w', encoding='utf-8') as f5:
+with open('song_vec.json', 'w', encoding='utf-8') as f5:
     song_vec_as_list = {}
     for song, vec in song_vec.items():
         vec_list = vec.tolist()
         song_vec_as_list[song] = vec_list
     json.dump( song_vec_as_list, f5, ensure_ascii=False)
 
-with open('tag_vec', 'w', encoding='utf-8') as f6:
+with open('tag_vec.json', 'w', encoding='utf-8') as f6:
     tag_vec_as_list = {}
     for tag, vec in tag_vec.items():
         tag_vec = vec.tolist()
