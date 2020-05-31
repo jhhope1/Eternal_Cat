@@ -1,4 +1,3 @@
-import pandas as pd
 f1 = open("train.txt", 'r', encoding='utf-8')
 
 from sklearn.datasets import load_digits
@@ -16,7 +15,7 @@ with open("song_meta.json", encoding='utf-8') as f3:
     i = 0
     for a in data:
         i += 1
-        song_nameset[a['id']] = a['song_name']
+        song_nameset[str(a['id'])] = a['song_name']
         if i%100000 == 0:
             print(a['song_name'])
 
@@ -77,7 +76,7 @@ for i in range(SZ):
         aff_mat[i][j] = 1 - 1/(tag_weighted_graph[tag1][tag2] + 1)
 
 
-lapEig = 10
+lapEig = 4
 
 embedding = SpectralEmbedding(n_components = lapEig, affinity = 'precomputed')
 
@@ -92,44 +91,11 @@ f1 = open("train.txt", 'r', encoding='utf-8')
 
 song_vec = {}
 song_ctr = {}
-
-def load_playlist():
-    global song_vec
-    global song_ctr
-    train = pd.read_json('train.json', typ = 'frame')
-    plylst_song = train['songs']
-    plylst_tag = train['tags']
-
-    plylst_song = plylst_song.tolist()
-    plylst_tag = plylst_tag.tolist()
-
-    for L in plylst_song:
-        for song in L:
-            song_vec[song] = np.zeros(lapEig)
-            song_ctr[song] = 0
-
-
-    for i, song_list in enumerate(plylst_song):
-        tags = plylst_tag[i]
-        for tag in tags:
-            if tag_pq_exi.get(tag) == None:
-                continue
-            t_vec = tag_vec[tag]
-            for song in song_list:
-
-                if song_ctr.get(song) == None:
-                    song_vec[song] = t_vec
-                    song_ctr[song] = 1 
-                else:
-                    song_vec[song] = song_vec[song] + t_vec
-                    song_ctr[song] += 1
-load_playlist()
-'''
 i = 0
 while True:
     i += 1
     txt = f1.readline()
-    if txt == '' or i > 10000:
+    if txt == '':
         break
     tags = txt.strip().split(',')
     tags.pop()
@@ -150,13 +116,25 @@ while True:
                 song_vec[song] = song_vec[song] + t_vec
                 song_ctr[song] += 1
 
-f1.close()'''
+f1.close()
 
 i = 0
-for song in song_vec:
-    i += 1
-    if i%1000 == 0:
-        print(song_vec[song])
+with open('song_vec', 'w', encoding='utf-8') as f5:
+    song_vec_as_list = {}
+    for song, vec in song_vec.items():
+        vec_list = vec.tolist()
+        song_vec_as_list[song] = vec_list
+    json.dump( song_vec_as_list, f5, ensure_ascii=False)
+
+with open('tag_vec', 'w', encoding='utf-8') as f6:
+    tag_vec_as_list = {}
+    for tag, vec in tag_vec.items():
+        tag_vec = vec.tolist()
+        tag_vec_as_list[tag] = tag_vec
+
+    json.dump(tag_vec_as_list, f6, ensure_ascii=False)
+
+
 
 print("song to vec is done... normalizing...")
 
@@ -167,26 +145,13 @@ print(X_transformed.shape)
 song_vec_size = len(song_vec)
 song_vec_list = []
 for song in song_vec:
-    if song_ctr[song]!=0:
-        song_vec[song] /= song_ctr[song]
-    if i%10000 == 0:
+    song_vec[song] /= song_ctr[song]
+    if i%1000 == 0:
         song_vec_list.append(song_vec[song])
         song_name.append(song_nameset[song])
     i += 1
-#    if i%10000 == 0:
-#        print(i," th song is done... ","out of ",song_vec_size)
-
-def song_vec_json(song_vec):
-    song_vec_path = 'song_vec.json'
-    for key, value in song_vec.items():
-        L = value.tolist()
-        song_vec[key] = L
-    
-    with open(song_vec_path,'w') as f:
-        json.dump(song_vec,f)
-
-song_vec_json(song_vec)
-
+    if i%10000 == 0:
+        print(i," th song is done... ","out of ",song_vec_size)
 print(np.array(song_vec_list).reshape(-1,lapEig))
 print(np.array(song_vec_list))
 song_vec_list_vec = np.asarray(song_vec_list).reshape(-1,lapEig)
@@ -239,5 +204,3 @@ for i in range(Y.shape[0]):
 plt.title("tSNE dim : " + str(2) + "  LapEig dim : " + str(lapEig), size = 20)
 plt.axis('off')
 plt.show()
-
-
