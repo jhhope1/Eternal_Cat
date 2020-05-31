@@ -7,14 +7,14 @@ import itertools
     
 result = []
 with open('song_vec.json', 'r', encoding='utf-8') as f1:
-        song_vec1 = json.load(f1)
+    song_vec1 = json.load(f1)
 
 with open('tag_vec.json', 'r', encoding='utf-8') as f2:
     tag_vec1 = json.load(f2)
 
-song_vec = {song : np.asarray(vec) for song, vec in song_vec1.items()}
+song_vec = {song : (np.asarray(vec[0]), vec[1]) for song, vec in song_vec1.items()} ## vec,  ¾²ÀÎ È½¼ö
 song_exi = {song : True for song, vec in song_vec1.items()}
-tags_vec = {song : np.asarray(vec) for song, vec in tag_vec1.items()}
+tags_vec = {song : (np.asarray(vec[0]), vec[1]) for song, vec in tag_vec1.items()} 
 tags_exi = {song : True for song, vec in tag_vec1.items()}
 
 
@@ -23,7 +23,7 @@ with open('val.json', 'r', encoding='utf-8') as f3:
 
 
 
-LapEig = 10
+LapEig = 4
 j = 0
 
 def find_and_append(data):
@@ -35,7 +35,7 @@ def find_and_append(data):
             continue
         else:
             i += 1
-            playlist_vec = playlist_vec + song_vec[song]
+            playlist_vec = playlist_vec + song_vec[song][0]
     if i != 0:
         playlist_vec = playlist_vec/i
     tag_vec = np.zeros(LapEig)
@@ -44,7 +44,7 @@ def find_and_append(data):
         if tags_exi.get(tag) == None:
             continue
         else:
-            tag_vec = tag_vec + tags_vec[tag]
+            tag_vec = tag_vec + tags_vec[tag][0]
     if i != 0:
         tag_vec = tag_vec/i
     
@@ -59,9 +59,9 @@ def find_and_append(data):
     tag_possible_list = []
     
     for every_song, vec in song_vec.items():
-        song_possible_list.append((np.linalg.norm(vec - playlist_vec), every_song))
+        song_possible_list.append((np.linalg.norm(vec - playlist_vec)/song_vec[every_song][1], every_song))
     for every_tag, vec in tags_vec.items():
-        tag_possible_list.append((np.linalg.norm(vec - playlist_vec), every_tag))
+        tag_possible_list.append((np.linalg.norm(vec - playlist_vec)/tag_vec[every_tag][1], every_tag))
     
     song_possible_list.sort()
     tag_possible_list.sort()

@@ -1,9 +1,10 @@
 f1 = open("train.txt", 'r', encoding='utf-8')
 
 from sklearn.datasets import load_digits
-from sklearn.manifold import SpectralEmbedding
+from sklearn.manifold import MDS
 import numpy as np
 import json
+import math
 
 tag_weighted_graph = {}
 tag_exi_checker = {}
@@ -70,21 +71,20 @@ for i in range(SZ):
         tag2 = tag_pq[j]
         
         if tag_weighted_graph[tag1].get(tag2) == None:
-            aff_mat[i][j] = 0
+            aff_mat[i][j] = 5
             continue
 
-        aff_mat[i][j] = 1 - 1/(tag_weighted_graph[tag1][tag2] + 1)
+        aff_mat[i][j] = 1 - 1 / (1 + np.exp(-tag_weighted_graph[tag1][tag2]/100))
 
 
-lapEig = 4
+lapEig = 7
 
-embedding = SpectralEmbedding(n_components = lapEig, affinity = 'precomputed')
+embedding = MDS(n_components = lapEig, metric = False, dissimilarity = 'precomputed')
 
 X_transformed = np.array(embedding.fit_transform(aff_mat))
 print(X_transformed[0:100])
 
-tag_vec = {tag_pq[idx] : X_transformed[idx] for idx in range(len(tag_pq))} ### tag_vec["띵곡"] = [1.2, ...]  := numpy array
-
+tag_vec = {tag_pq[idx] : X_transformed[idx] for idx in range(len(tag_pq))} 
 #### song to vector
 
 f1 = open("train.txt", 'r', encoding='utf-8')
@@ -119,18 +119,21 @@ while True:
 f1.close()
 
 i = 0
-with open('song_vec', 'w', encoding='utf-8') as f5:
+for song in song_vec:
+    song_vec[song] /= song_ctr[song]
+
+with open('song_vec.json', 'w', encoding='utf-8') as f5:
     song_vec_as_list = {}
     for song, vec in song_vec.items():
         vec_list = vec.tolist()
-        song_vec_as_list[song] = vec_list
+        song_vec_as_list[song] = (vec_list, song_ctr[song])
     json.dump( song_vec_as_list, f5, ensure_ascii=False)
 
-with open('tag_vec', 'w', encoding='utf-8') as f6:
+with open('tag_vec.json', 'w', encoding='utf-8') as f6:
     tag_vec_as_list = {}
     for tag, vec in tag_vec.items():
         tag_vec = vec.tolist()
-        tag_vec_as_list[tag] = tag_vec
+        tag_vec_as_list[tag] = (tag_vec, tag_exi_checker[tag])
 
     json.dump(tag_vec_as_list, f6, ensure_ascii=False)
 
@@ -145,7 +148,7 @@ print(X_transformed.shape)
 song_vec_size = len(song_vec)
 song_vec_list = []
 for song in song_vec:
-    song_vec[song] /= song_ctr[song]
+
     if i%1000 == 0:
         song_vec_list.append(song_vec[song])
         song_name.append(song_nameset[song])
@@ -189,11 +192,13 @@ y_min, y_max = np.min(Y, axis = 0), np.max(Y, axis = 0)
 Y = (Y - y_min)/(y_max - y_min)
 
 for i in range(Y.shape[0]):
-    if i < 80:
-        plt.text(Y[i,0], Y[i,1], tag_pq[i], FontProperties = fontprop_main, color = (0,0,0))
+    if i < SZ:
+        #plt.text(Y[i,0], Y[i,1], tag_pq[i], FontProperties = fontprop_main, color = (0,0,0))
+        plt.plot(Y[i,0], Y[i,1], 'o')
         continue
     if i >= SZ:
-        plt.text(Y[i,0], Y[i,1], song_name[i-SZ], FontProperties = fontprop, color = (1,0,0))
+        #plt.text(Y[i,0], Y[i,1], song_name[i-SZ], FontProperties = fontprop, color = (1,0,0))
+        plt.plot(Y[i,0], Y[i,1], 'ro')
         print(i,"th song is done....")
         continue
     if i%10 == 0:
