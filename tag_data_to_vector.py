@@ -1,3 +1,4 @@
+import pandas as pd
 f1 = open("train.txt", 'r', encoding='utf-8')
 
 from sklearn.datasets import load_digits
@@ -15,7 +16,7 @@ with open("song_meta.json", encoding='utf-8') as f3:
     i = 0
     for a in data:
         i += 1
-        song_nameset[str(a['id'])] = a['song_name']
+        song_nameset[a['id']] = a['song_name']
         if i%100000 == 0:
             print(a['song_name'])
 
@@ -76,7 +77,7 @@ for i in range(SZ):
         aff_mat[i][j] = 1 - 1/(tag_weighted_graph[tag1][tag2] + 1)
 
 
-lapEig = 4
+lapEig = 10
 
 embedding = SpectralEmbedding(n_components = lapEig, affinity = 'precomputed')
 
@@ -91,6 +92,39 @@ f1 = open("train.txt", 'r', encoding='utf-8')
 
 song_vec = {}
 song_ctr = {}
+
+def load_playlist():
+    global song_vec
+    global song_ctr
+    train = pd.read_json('train.json', typ = 'frame')
+    plylst_song = train['songs']
+    plylst_tag = train['tags']
+
+    plylst_song = plylst_song.tolist()
+    plylst_tag = plylst_tag.tolist()
+
+    for L in plylst_song:
+        for song in L:
+            song_vec[song] = np.zeros(lapEig)
+            song_ctr[song] = 0
+
+
+    for i, song_list in enumerate(plylst_song):
+        tags = plylst_tag[i]
+        for tag in tags:
+            if tag_pq_exi.get(tag) == None:
+                continue
+            t_vec = tag_vec[tag]
+            for song in song_list:
+
+                if song_ctr.get(song) == None:
+                    song_vec[song] = t_vec
+                    song_ctr[song] = 1 
+                else:
+                    song_vec[song] = song_vec[song] + t_vec
+                    song_ctr[song] += 1
+load_playlist()
+'''
 i = 0
 while True:
     i += 1
@@ -116,7 +150,7 @@ while True:
                 song_vec[song] = song_vec[song] + t_vec
                 song_ctr[song] += 1
 
-f1.close()
+f1.close()'''
 
 i = 0
 for song in song_vec:
@@ -133,13 +167,26 @@ print(X_transformed.shape)
 song_vec_size = len(song_vec)
 song_vec_list = []
 for song in song_vec:
-    song_vec[song] /= song_ctr[song]
-    if i%1000 == 0:
+    if song_ctr[song]!=0:
+        song_vec[song] /= song_ctr[song]
+    if i%10000 == 0:
         song_vec_list.append(song_vec[song])
         song_name.append(song_nameset[song])
     i += 1
-    if i%10000 == 0:
-        print(i," th song is done... ","out of ",song_vec_size)
+#    if i%10000 == 0:
+#        print(i," th song is done... ","out of ",song_vec_size)
+
+def song_vec_json(song_vec):
+    song_vec_path = 'song_vec.json'
+    for key, value in song_vec.items():
+        L = value.tolist()
+        song_vec[key] = L
+    
+    with open(song_vec_path,'w') as f:
+        json.dump(song_vec,f)
+
+song_vec_json(song_vec)
+
 print(np.array(song_vec_list).reshape(-1,lapEig))
 print(np.array(song_vec_list))
 song_vec_list_vec = np.asarray(song_vec_list).reshape(-1,lapEig)

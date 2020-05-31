@@ -1,5 +1,9 @@
 {
     "files.associations": {
         "vector": "cpp"
-    }
+    },
+    "python.pythonPath": "C:\\Users\\jhhop\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
+    "python.linting.pylintEnabled": true,
+    "python.linting.banditEnabled": false,
+    "python.linting.enabled": true
 }
