@@ -33,6 +33,7 @@ with open(os.path.join(data_path, "val.json"), "r", encoding = 'utf-8') as f3, o
         for tag in playlist["tags"]:
             if tag_to_idx.get(tag) != None:
                 playlist_vec[tag_to_idx[tag]] = 1
+        
         inferenced_vec = mi.inference(playlist_vec)
         inferenced_list = [(inferenced_vec[idx], idx) for idx in range(len(inferenced_vec))]
         inferenced_list = sorted(inferenced_list, reverse=True)
@@ -43,18 +44,18 @@ with open(os.path.join(data_path, "val.json"), "r", encoding = 'utf-8') as f3, o
         loc_song = []
         loc_tag = []
         for val, idx in inferenced_list:
-            if idx in range(song_size) and tag_ctr < tag_max:
+            if idx in range(song_size) and song_ctr < song_max:
                 if idx_to_item[idx] in playlist['songs']:
                     continue
                 else:
                     loc_song.append(int(idx_to_item[idx]))
-                    tag_ctr += 1
-            if idx in range(song_size, input_dim) and song_ctr < song_max:
+                    song_ctr += 1
+            if idx in range(song_size, input_dim) and tag_ctr < tag_max:
                 if idx_to_item[idx] in playlist['tags']:
                     continue
                 else:
                     loc_tag.append(idx_to_item[idx])
-                    song_ctr += 1
+                    tag_ctr += 1
             if tag_ctr==tag_max and song_ctr == song_max:
                 break
         inf_ans['id'] = playlist['id']
@@ -63,5 +64,6 @@ with open(os.path.join(data_path, "val.json"), "r", encoding = 'utf-8') as f3, o
         ans_list.append(inf_ans)
         if cnt%1000==0:
             print(cnt)
+            print(inf_ans)
     json.dump(ans_list, f4, ensure_ascii=False)
 
