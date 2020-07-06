@@ -12,16 +12,16 @@ import numpy as np
 import json
 import playlist_batchmaker as pb
 import split_data
-import argparse
+import os
 
-train_size = 100000
-test_size = 500
-input_dim = 12393
+input_dim = 31202
 noise_p = 0.5
 extract_num = 100
 aug_step = 1
-model_PATH = './AE_weight.pth'
-batch_size = 100
+PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
+data_path = os.path.join(PARENT_PATH, 'data')
+model_PATH = os.path.join(data_path, './AE_weight.pth')
+batch_size = 512
 epochs = 100
 log_interval = 100
 validation_ratio = 0.1
@@ -31,9 +31,9 @@ random_seed = 10
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dp = nn.Dropout(p=noise_p)
-model = AE_model.AutoEncoder(layer_sizes = ((input_dim,500,500,1000),(1000,600,500,input_dim)), is_constrained=False, symmetric=False, dp_drop_prob=0.).to(device)
+model = AE_model.AutoEncoder(layer_sizes = ((input_dim,500,500,1000),(1000,500,500,input_dim)), is_constrained=True, symmetric=True, dp_drop_prob=0.7).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
-train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed)
+train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 
 # Reconstruction + KL divergence losses summed over all elements and batch
@@ -42,7 +42,7 @@ def loss_function(recon_x, x):
     return BCE
 
 def train(epoch):#Kakao AE
-    #model.load_state_dict(torch.load(model_PATH))
+    model.load_state_dict(torch.load(model_PATH))
     model.train()
     train_loss = 0
     for idx,data in enumerate(train_loader):
@@ -68,8 +68,8 @@ def train(epoch):#Kakao AE
 
         if idx % log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, idx, train_size/batch_size,
-                100. * idx,
+                epoch, idx, len(train_loader),
+                100. * idx/len(train_loader),
                 loss.item() / len(data)))   
 
     print('====> Epoch: {} Average loss: {:.4f}'.format(
@@ -80,8 +80,6 @@ def test_accuracy():
   model.load_state_dict(torch.load(model_PATH))
   model.eval()
   with torch.no_grad():
-    model.load_state_dict(torch.load(model_PATH))
-    model.eval()
     total_lostsong = 0
     correct = 0
     for data in test_loader:

@@ -5,13 +5,15 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import json
+import random
 # 경고 메시지 무시하기
 import warnings
 warnings.filterwarnings("ignore")
 
-input_dim = 12393
+input_dim = 31202
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
+data_path = os.path.join(PARENT_PATH, 'data')
 
 class Noise_p(object):
     def __init__(self, noise_p):
@@ -26,18 +28,28 @@ class Noise_p(object):
             input_one_hot[zero_indices] = 0
         return {'input_one_hot': input_one_hot, 'target_one_hot': sample['target_one_hot']}
 
+class Noise_uniform(object):
+    def __call__(self, sample):
+        input_one_hot = sample['input_one_hot']
+        non_zero_indices = sample['non_zero_indices']
+        zero_indices = np.random.choice(non_zero_indices, replace=False,
+                           size=int(non_zero_indices.size * random.uniform(0,1)))
+        if zero_indices.size != 0:
+            input_one_hot[zero_indices] = 0
+        return {'input_one_hot': input_one_hot, 'target_one_hot': sample['target_one_hot']}
+
 class PlaylistDataset(Dataset):
     """Playlist target dataset."""
 
     def __init__(self, transform = Noise_p(0.5)):
-        with open("train.json", 'r', encoding='utf-8') as f1:
+        with open(os.path.join(data_path, "train.json"), 'r', encoding='utf-8') as f1:
             self.training_set = json.load(f1)
 
         self.song_to_idx = {}
         self.tag_to_idx = {}
-        with open("song_to_idx.json", 'r', encoding='utf-8') as f1:
+        with open(os.path.join(data_path, "song_to_idx.json"), 'r', encoding='utf-8') as f1:
             self.song_to_idx = json.load(f1)
-        with open("tag_to_idx.json", 'r', encoding='utf-8') as f2:
+        with open(os.path.join(data_path,"tag_to_idx.json"), 'r', encoding='utf-8') as f2:
             self.tag_to_idx = json.load(f2)
         
         self.transform = transform
