@@ -17,21 +17,21 @@ import os
 input_dim = 31202
 noise_p = 0.5
 extract_num = 100
-aug_step = 1
+aug_step = 1 #얼마가 최적일까?
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './AE_weight.pth')
 batch_size = 512
 epochs = 100
 log_interval = 100
-validation_ratio = 0.1
-test_ratio = 0.1
+validation_ratio = 0.01
+test_ratio = 0.01
 random_seed = 10
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dp = nn.Dropout(p=noise_p)
-model = AE_model.AutoEncoder(layer_sizes = ((input_dim,500,500,1000),(1000,500,500,input_dim)), is_constrained=True, symmetric=True, dp_drop_prob=0.7).to(device)
+model = AE_model.AutoEncoder(layer_sizes = ((input_dim,1000,1000,1000,1000),(1000,1000,1000,1000,input_dim)), is_constrained=False, symmetric=True, dp_drop_prob=0.8).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
@@ -41,8 +41,9 @@ def loss_function(recon_x, x):
     BCE = F.binary_cross_entropy(recon_x, x.view(-1, input_dim), reduction='sum')
     return BCE
 
-def train(epoch):#Kakao AE
-    model.load_state_dict(torch.load(model_PATH))
+def train(epoch, is_load = True):#Kakao AE
+    if is_load:
+        model.load_state_dict(torch.load(model_PATH))
     model.train()
     train_loss = 0
     for idx,data in enumerate(train_loader):
@@ -60,7 +61,6 @@ def train(epoch):#Kakao AE
                 if noise_p > 0.0:
                     noised_inputs = dp(inputs)
                 optimizer.zero_grad()
-                noised_inputs = noised_inputs
                 recon_batch = model(noised_inputs)
                 loss = loss_function(recon_batch, inputs)
                 loss.backward()
@@ -100,5 +100,5 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch)
-        test_accuracy()
+        #train(epoch = epoch, is_load=True)
+        test_accuracy() 

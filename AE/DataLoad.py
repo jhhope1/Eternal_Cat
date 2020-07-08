@@ -38,6 +38,7 @@ class Noise_uniform(object):
             input_one_hot[zero_indices] = 0
         return {'input_one_hot': input_one_hot, 'target_one_hot': sample['target_one_hot']}
 
+
 class PlaylistDataset(Dataset):
     """Playlist target dataset."""
 
