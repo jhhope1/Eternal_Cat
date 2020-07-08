@@ -89,5 +89,5 @@ class ToTensor(object):
     def __call__(self, sample):
         input_one_hot, target_one_hot = sample['input_one_hot'], sample['target_one_hot']
         if torch.cuda.is_available():
-            return {'input_one_hot': torch.torch.FloatTensor(input_one_hot).to(device),
-                'target_one_hot': torch.torch.FloatTensor(target_one_hot).to(device)}
+            return {'input_one_hot': torch.FloatTensor(input_one_hot).to(device),
+                'target_one_hot': torch.FloatTensor(target_one_hot).to(device)}
