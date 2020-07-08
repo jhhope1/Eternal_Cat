@@ -10,7 +10,7 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
-input_dim = 31202
+input_dim = 43641
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
@@ -59,22 +59,23 @@ class PlaylistDataset(Dataset):
     def __getitem__(self, idx):        
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        songs, tags = self.training_set[idx]['songs'], self.training_set[idx]['tags']
         input_one_hot = np.zeros(input_dim)
-
         non_zero_indices = []
+
+        songs, tags = self.training_set[idx]['songs'], self.training_set[idx]['tags']
         for song in songs:
             if self.song_to_idx.get(str(song)) != None:
-                input_one_hot[self.song_to_idx[str(song)]] = 1
                 non_zero_indices.append(self.song_to_idx[str(song)])
         for tag in tags:
             if self.tag_to_idx.get(tag) != None:
-                input_one_hot[self.tag_to_idx[tag]] = 1
                 non_zero_indices.append(self.tag_to_idx[tag])
 
         non_zero_indices = np.array(non_zero_indices)
+        if non_zero_indices.size > 0:
+            input_one_hot[non_zero_indices] = 1
         #playlist_vec: one hot vec of i'th playlist
 
+        non_zero_indices = np.array(non_zero_indices)
         sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'non_zero_indices' : non_zero_indices}
 
         if self.transform:

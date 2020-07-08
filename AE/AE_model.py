@@ -72,7 +72,7 @@ class AutoEncoder(nn.Module):
     self.decode_b = nn.ParameterList(
       [nn.Parameter(torch.zeros(layer_sizes[1][i + 1])) for i in range(len(layer_sizes[1]) - 1)])
 
-    print("******************************")
+    '''print("******************************")
     print("******************************")
     print(layer_sizes)
     print("Dropout drop probability: {}".format(self._dp_drop_prob))
@@ -91,7 +91,7 @@ class AutoEncoder(nn.Module):
         print(w.data.size())
         print(self.decode_b[ind].size())
     print("******************************")
-    print("******************************")
+    print("******************************")'''
 
 
   def encode(self, x):
