@@ -51,14 +51,14 @@ parser.add_argument('--ratio', type=float, default=1, help='size of training dat
 
 
 show_loss = False
-show_time = False
+show_time = True
 show_topk = False
 
 t = time()
 
 args = parser.parse_args()
 data = load_data(args)
-train(args, data, show_loss, show_topk)
+train(args, show_loss, show_topk)
 
 if show_time:
     print('time used: %d s' % (time() - t))
