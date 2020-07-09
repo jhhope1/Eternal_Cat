@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from aggregators import ConcatAggregator
 from sklearn.metrics import f1_score, roc_auc_score
 
-
 class KGCN(nn.Module):
     def __init__(self, args, n_user, n_entity, n_relation, adj_entity, adj_relation):
         super(KGCN, self).__init__()
@@ -13,6 +12,7 @@ class KGCN(nn.Module):
         self.user_emb_matrix = nn.Embedding(num_embeddings=n_user, embedding_dim=self.dim)
         self.entity_emb_matrix = nn.Embedding(num_embeddings=n_entity, embedding_dim=self.dim)
         self.relation_emb_matrix = nn.Embedding(num_embeddings=n_relation, embedding_dim=self.dim)
+        self.fc = nn.ModuleList([nn.Linear(2*args.dim ,args.dim) for _ in range(args.n_iter)])
     
     def _parse_args(self, args, adj_entity, adj_relation):
         #[entity_num, neighbor_sample_size]
@@ -52,9 +52,9 @@ class KGCN(nn.Module):
 
         for i in range(self.n_iter):
             if i == self.n_iter - 1:
-                aggregator = self.aggregator_class(self.batch_size, self.dim, act = torch.tanh)
+                aggregator = self.aggregator_class(self.batch_size, self.dim, self.fc[i], act = torch.tanh)
             else:
-                aggregator = self.aggregator_class(self.batch_size, self.dim)
+                aggregator = self.aggregator_class(self.batch_size, self.fc[i])
             self.aggregators.append(aggregator)
         
             entity_vectors_next_iter = []

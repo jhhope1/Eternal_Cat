@@ -6,7 +6,7 @@ from data_loader import load_data
 import numpy as np
 from sklearn.metrics import f1_score, roc_auc_score
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")# change plz
 model_PATH = './AE_weight.pth'
 
 #neighbor_sample_size = 8
@@ -28,7 +28,7 @@ def train(args, show_loss = True, show_topk = False):
     model = KGCN(args = args, n_user = n_user, n_entity = n_entity,
     n_relation = n_relation, adj_entity = adj_entity, adj_relation = adj_relation).to(device)
     
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay = args.l2_weight)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay = args.l2_weight)
 
     for epoch in range(1, args.n_epochs + 1):
         model.train()

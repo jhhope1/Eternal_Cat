@@ -63,10 +63,10 @@ class Aggregator(object):
 
 
 class ConcatAggregator(Aggregator):
-    def __init__(self, batch_size, dim, dropout=0., act=F.selu, name=None):
+    def __init__(self, batch_size, dim, fc, dropout=0., act=F.relu, name=None):
         super(ConcatAggregator, self).__init__(batch_size, dim, dropout, act, name)
 
-        self.fc1 = nn.Linear(self.dim * 2, self.dim)
+        self.fc_ = fc
     def _call(self, self_vectors, neighbor_vectors, neighbor_relations, user_embeddings):
         # [batch_size, -1, dim]
         neighbors_agg = self._mix_neighbor_vectors(neighbor_vectors, neighbor_relations, user_embeddings)
@@ -80,7 +80,7 @@ class ConcatAggregator(Aggregator):
         #output = torch.nn.dropout(output, keep_prob=1-self.dropout)
 
         # [-1, dim]
-        output = self.fc1(output)
+        output = self.fc_(output)
         #output = torch.matmul(output, self.weights) + self.bias
 
         # [batch_size, -1, dim]
