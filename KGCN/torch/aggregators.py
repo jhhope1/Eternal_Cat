@@ -65,8 +65,8 @@ class Aggregator(object):
 class ConcatAggregator(Aggregator):
     def __init__(self, batch_size, dim, fc, dropout=0., act=F.relu, name=None):
         super(ConcatAggregator, self).__init__(batch_size, dim, dropout, act, name)
-
         self.fc_ = fc
+        
     def _call(self, self_vectors, neighbor_vectors, neighbor_relations, user_embeddings):
         # [batch_size, -1, dim]
         neighbors_agg = self._mix_neighbor_vectors(neighbor_vectors, neighbor_relations, user_embeddings)

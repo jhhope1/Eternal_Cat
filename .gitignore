@@ -9,6 +9,7 @@ song_vec.json
 .vs/Eternal_Cat/v15/Browse.VC.db
 .vs/VSWorkspaceState.json
 data/*
+KGCN/data/*
 *.pth
 font.TTF
 *.pyc

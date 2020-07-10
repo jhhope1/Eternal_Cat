@@ -2,13 +2,15 @@ import argparse
 import numpy as np
 import os
 
-RATING_FILE_NAME = dict({'movie': 'ratings.csv', 'book': 'BX-Book-Ratings.csv', 'music': 'user_artists.dat'})
-SEP = dict({'movie': ',', 'book': ';', 'music': '\t'})
-THRESHOLD = dict({'movie': 4, 'book': 0, 'music': 0})
-DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+
+
+RATING_FILE_NAME = dict({'movie': 'ratings.csv', 'book': 'BX-Book-Ratings.csv', 'music': 'ratings.txt', 'music_kakao': 'rating.txt'})
+SEP = dict({'movie': ',', 'book': ';', 'music': '\t', 'music_kakao': '\t'})
+THRESHOLD = dict({'movie': 4, 'book': 0, 'music': 0, 'music_kakao': 0})
+DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
 
 def read_item_index_to_entity_id_file():
-    file = os.path.join(DATA, DATASET, 'item_index2entity_id.txt')
+    file = DATA + DATASET + '/item2idx.txt'
     print('reading item index to entity id file: ' + file + ' ...')
     i = 0
     for line in open(file, encoding='utf-8').readlines():
@@ -20,8 +22,7 @@ def read_item_index_to_entity_id_file():
 
 
 def convert_rating():
-    file = os.path.join(DATA, DATASET, RATING_FILE_NAME[DATASET])
-    #file = '../data/' + DATASET + '/' + RATING_FILE_NAME[DATASET]
+    file = DATA + DATASET + '/' + RATING_FILE_NAME[DATASET]
 
     print('reading rating file ...')
     item_set = set(item_index_old2new.values())
@@ -53,8 +54,7 @@ def convert_rating():
             user_neg_ratings[user_index_old].add(item_index)
 
     print('converting rating file ...')
-    writer_file = os.path.join(DATA, DATASET, 'ratings_final.txt')
-    writer = open(writer_file, 'w', encoding='utf-8')
+    writer = open(DATA + DATASET + '/ratings_final.txt', 'w', encoding='utf-8')
     user_cnt = 0
     user_index_old2new = dict()
     for user_index_old, pos_item_set in user_pos_ratings.items():
@@ -79,24 +79,27 @@ def convert_kg():
     print('converting kg file ...')
     entity_cnt = len(entity_id2index)
     relation_cnt = 0
-    
-    kg_final_file = os.path.join(DATA, DATASET, 'kg_final.txt')
-    writer = open(kg_final_file, 'w', encoding='utf-8')
-    for line in open(os.path.join(DATA, DATASET, 'kg.txt'), encoding='utf-8'):
-        array = line.strip().split('\t')
+
+    writer = open(DATA + DATASET + '/kg_final.txt', 'w', encoding='utf-8')
+    for line in open(DATA + DATASET + '/kg.txt', encoding='utf-8'):
+        array = line.strip().split(' ')
         head_old = array[0]
         relation_old = array[1]
         tail_old = array[2]
 
-        if head_old not in entity_id2index:
+        if head_old not in item_index_old2new:
             entity_id2index[head_old] = entity_cnt
             entity_cnt += 1
-        head = entity_id2index[head_old]
+            head = entity_id2index[head_old]
+        else:
+            head = entity_id2index[str(item_index_old2new[head_old])]
 
-        if tail_old not in entity_id2index:
+        if tail_old not in item_index_old2new:
             entity_id2index[tail_old] = entity_cnt
             entity_cnt += 1
-        tail = entity_id2index[tail_old]
+            tail = entity_id2index[tail_old]
+        else:
+            tail = entity_id2index[str(item_index_old2new[tail_old])]
 
         if relation_old not in relation_id2index:
             relation_id2index[relation_old] = relation_cnt
@@ -114,7 +117,7 @@ if __name__ == '__main__':
     np.random.seed(555)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', type=str, default='music', help='which dataset to preprocess')
+    parser.add_argument('-d', type=str, default='music_kakao', help='which dataset to preprocess')
     args = parser.parse_args()
     DATASET = args.d
 
@@ -123,7 +126,7 @@ if __name__ == '__main__':
     item_index_old2new = dict()
 
     read_item_index_to_entity_id_file()
-    convert_rating()
+    #convert_rating()
     convert_kg()
 
     print('done')
