@@ -1,6 +1,6 @@
 import json
 import os
-input_dim = 31202
+input_dim = 77658
 song_size = 0
 song_to_idx = {}
 tag_to_idx = {}

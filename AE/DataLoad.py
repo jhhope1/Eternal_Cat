@@ -10,7 +10,7 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
-input_dim = 43641
+input_dim = 77658
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')

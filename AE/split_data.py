@@ -36,7 +36,7 @@ def splited_loader(validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, b
     test_sampler = SubsetRandomSampler(test_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_transformed_dataset, batch_size=batch_size, sampler=train_sampler, num_workers=0
+        train_transformed_dataset, batch_size=batch_size, sampler=train_sampler, num_workers=2
     )
 
     valid_loader = torch.utils.data.DataLoader(
