@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as weight_init
 import os
-import argparse
 import json
 import numpy as np
 from aggregators import ConcatAggregator
@@ -227,7 +226,7 @@ class AE_KGCN(nn.Module):
         return z
 
     def forward(self, x):
-        KGCN = False
+        KGCN = True
         if KGCN:        
             if len(x.shape) == 2:
                 self.batch_size = x.shape[0]

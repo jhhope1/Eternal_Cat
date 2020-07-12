@@ -13,7 +13,6 @@ import json
 import playlist_batchmaker as pb
 import split_data
 import os
-import argparse
 
 input_dim = 31202
 noise_p = 0.5
@@ -22,7 +21,7 @@ aug_step = 0 #얼마가 최적일까?
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './AE_weight.pth')
-batch_size = 512
+batch_size = 256
 epochs = 100
 log_interval = 50
 validation_ratio = 0.01
