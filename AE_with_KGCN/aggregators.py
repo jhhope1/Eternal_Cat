@@ -71,7 +71,7 @@ class ConcatAggregator(Aggregator):
         # [batch_size, -1, dim]
         neighbors_agg = self._mix_neighbor_vectors(neighbor_vectors, neighbor_relations, user_embeddings)
         # [batch_size, -1, dim * 2]
-        output = torch.cat([self_vectors, neighbors_agg], axis=-1)
+        output = torch.cat([self_vectors.repeat(self.batch_size,1,1), neighbors_agg], axis=-1)
 
         # [-1, dim * 2]
         output = torch.reshape(output, [-1, self.dim * 2])

@@ -22,7 +22,7 @@ aug_step = 0 #얼마가 최적일까?
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './AE_weight.pth')
-batch_size = 512
+batch_size = 64
 epochs = 100
 log_interval = 2
 validation_ratio = 0.01
@@ -44,17 +44,17 @@ parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
 parser.add_argument('--ratio', type=float, default=1, help='size of training dataset')
 args = parser.parse_args()
 
-device = torch.device('cpu')#"cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dp = nn.Dropout(p=noise_p)
 model = AE_KGCN_model.AE_KGCN(dim = KGCN_dim, layer_sizes = ((input_dim,500,500,500,1000),(1000,500,500,500,input_dim)), is_constrained=True, dp_drop_prob=0.8, args = args).to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=args.l2_weight)
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x):
-    BCE = F.binary_cross_entropy(recon_x, x.view(-1, input_dim), reduction='sum')
+    BCE = F.binary_cross_entropy_with_logits(recon_x, x.view(-1, input_dim), reduction='mean')
     return BCE
 
 def train(epoch, is_load = True):#Kakao AE
@@ -64,8 +64,8 @@ def train(epoch, is_load = True):#Kakao AE
     train_loss = 0
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
-        recon_batch = model(data['input_one_hot'].to(device))
-        loss = loss_function(recon_batch, data['target_one_hot'].to(device))
+        recon_batch = model(data['input_one_hot'])
+        loss = loss_function(recon_batch, data['target_one_hot'])
         loss.backward(retain_graph=True)
         train_loss += loss.item()
         optimizer.step()

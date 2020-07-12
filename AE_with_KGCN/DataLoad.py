@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 input_dim = 31202
-device = torch.device('cpu')#"cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 

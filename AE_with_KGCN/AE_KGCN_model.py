@@ -9,8 +9,7 @@ import numpy as np
 from aggregators import ConcatAggregator
 from sklearn.metrics import f1_score, roc_auc_score
 torch.cuda.set_device(0)
-device = torch.device('cpu')#"cuda" if torch.cuda.is_available() else "cpu")
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # music_kakao
 
@@ -130,7 +129,7 @@ class AE_KGCN(nn.Module):
             layer_sizes[1][i+1]) for i in range(len(layer_sizes[1])-2)])
 
     def get_neighbors(self):
-        self.entity_vectors = [self.item_emb_matrix.weight]
+        self.entity_vectors = [self.item_emb_matrix.weight.to(device)]
         self.relation_vectors = []
 
         relation = []
@@ -154,8 +153,8 @@ class AE_KGCN(nn.Module):
             e_vector = self.entity_emb_matrix(torch.from_numpy(np.array(r_list)[sampled_indices]).type(torch.LongTensor))
             relation_vectors_1.append(r_vector)
             entity_vectors_1.append(e_vector)
-        self.relation_vectors.append(torch.cat(relation_vectors_1))
-        self.entity_vectors.append(torch.cat(entity_vectors_1))
+        self.relation_vectors.append(torch.cat(relation_vectors_1).to(device))
+        self.entity_vectors.append(torch.cat(entity_vectors_1).to(device))
 
 
     def aggregate(self, batch_entity_vectors, batch_relation_vectors, user_latent):
@@ -174,7 +173,7 @@ class AE_KGCN(nn.Module):
 
             entity_vectors_next_iter = []
             for hop in range(self.n_iter - i):
-                shape = (self.batch_size, -1, self.n_neighbor, self.dim)
+                shape = (-1, self.n_neighbor, self.dim)#same for all batch
                 vector = aggregator(self_vectors=batch_entity_vectors[hop],
                                     neighbor_vectors=torch.reshape(
                                     batch_entity_vectors[hop+1], shape),
@@ -237,10 +236,10 @@ class AE_KGCN(nn.Module):
         batch_entity_vectors = []
         batch_relation_vectors = []
         for i in range(self.n_iter+1):
-            batch_entity_vectors.append(self.entity_vectors[i].repeat(self.batch_size,1,1).to(device))
+            batch_entity_vectors.append(self.entity_vectors[i].to(device)) #same for all batch
             if i==self.n_iter:
                 break
-            batch_relation_vectors.append(self.relation_vectors[i].repeat(self.batch_size,1,1).to(device))
+            batch_relation_vectors.append(self.relation_vectors[i].to(device))#same for all batch
         
         encode = self.encode(x)
         user_latent = self.encode2u(encode)
