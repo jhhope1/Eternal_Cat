@@ -21,7 +21,7 @@ aug_step = 1 #얼마가 최적일까?
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './AE_weight.pth')
-batch_size = 512
+batch_size = 256
 epochs = 100
 log_interval = 100
 validation_ratio = 0.01
@@ -91,7 +91,7 @@ def test_accuracy():
         diff = img - noise_img
 
         total_lostsong += torch.sum(diff.view(-1))
-        one_hot = torch.cuda.FloatTensor(indices.size(0), input_dim)
+        one_hot = torch.zeros(indices.size(0), input_dim).to(device)
         one_hot = one_hot.scatter(1, indices.cuda().data, 1)
 
         one_hot_filter = one_hot * diff

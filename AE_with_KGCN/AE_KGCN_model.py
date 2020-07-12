@@ -129,8 +129,8 @@ class AE_KGCN(nn.Module):
             layer_sizes[1][i+1]) for i in range(len(layer_sizes[1])-2)])
 
     def get_neighbors(self):
-        self.entity_vectors = [self.item_emb_matrix.weight.to(device)]
-        self.relation_vectors = []
+        self.entity_vectors = nn.ParameterList([self.item_emb_matrix.weight])
+        self.relation_vectors = nn.ParameterList([])
 
         relation = []
         entity = []
@@ -153,9 +153,8 @@ class AE_KGCN(nn.Module):
             e_vector = self.entity_emb_matrix(torch.from_numpy(np.array(r_list)[sampled_indices]).type(torch.LongTensor))
             relation_vectors_1.append(r_vector)
             entity_vectors_1.append(e_vector)
-        self.relation_vectors.append(torch.cat(relation_vectors_1).to(device))
-        self.entity_vectors.append(torch.cat(entity_vectors_1).to(device))
-
+        self.relation_vectors.append(nn.Parameter(torch.cat(relation_vectors_1)))
+        self.entity_vectors.append(nn.Parameter(torch.cat(entity_vectors_1)))
 
     def aggregate(self, batch_entity_vectors, batch_relation_vectors, user_latent):
         #code for iter = 1
@@ -228,22 +227,26 @@ class AE_KGCN(nn.Module):
         return z
 
     def forward(self, x):
-        if len(x.shape) == 2:
-            self.batch_size = x.shape[0]
+        KGCN = True
+        if KGCN:        
+            if len(x.shape) == 2:
+                self.batch_size = x.shape[0]
+            else:
+                self.batch_size = 1
+            
+            batch_entity_vectors = []
+            batch_relation_vectors = []
+            for i in range(self.n_iter+1):
+                batch_entity_vectors.append(self.entity_vectors[i].to(device)) #same for all batch
+                if i==self.n_iter:
+                    break
+                batch_relation_vectors.append(self.relation_vectors[i].to(device))#same for all batch
+            
+            encode = self.encode(x)
+            user_latent = self.encode2u(encode)
+            res = self.aggregate(batch_entity_vectors, batch_relation_vectors, user_latent)
+            ret = torch.bmm(res,torch.reshape(user_latent,(self.batch_size,self.dim,1))).reshape(self.batch_size,-1)
+            #g: innerproduct
+            return activation(self.decode(encode)+F.pad(ret, (0, self.layer_sizes[0][0]-self.n_item), "constant", 0) ,'sigmoid')
         else:
-            self.batch_size = 1
-        
-        batch_entity_vectors = []
-        batch_relation_vectors = []
-        for i in range(self.n_iter+1):
-            batch_entity_vectors.append(self.entity_vectors[i].to(device)) #same for all batch
-            if i==self.n_iter:
-                break
-            batch_relation_vectors.append(self.relation_vectors[i].to(device))#same for all batch
-        
-        encode = self.encode(x)
-        user_latent = self.encode2u(encode)
-        res = self.aggregate(batch_entity_vectors, batch_relation_vectors, user_latent)
-        ret = torch.bmm(res,torch.reshape(user_latent,(self.batch_size,self.dim,1))).reshape(self.batch_size,-1)
-        #g: innerproduct
-        return activation(self.decode(encode)+F.pad(ret, (0, self.layer_sizes[0][0]-self.n_item), "constant", 0) ,'sigmoid')
+            return self.decode(self.encode(x))
