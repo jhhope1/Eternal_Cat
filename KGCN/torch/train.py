@@ -16,7 +16,7 @@ model_PATH = './AE_weight.pth'
 #l2_reg = 1e-4
 #batch_size = 128
 
-def base_loss_fn(y_hat, y):
+def loss_fn(y_hat, y):
     base_loss = F.binary_cross_entropy_with_logits(y.float(), y_hat, reduction='mean')
     return base_loss
 
@@ -47,14 +47,7 @@ def train(args, show_loss = True, show_topk = False):
             train_input_label = torch.from_numpy(train_data[i:k, 2]).to(device)
 
             train_output = model(train_input_user, train_input_item)
-            base_loss = base_loss_fn(train_output, train_input_label)
-            
-            l2_loss = torch.sum(model.user_emb_matrix.weight**2) + torch.sum(model.entity_emb_matrix.weight**2) + torch.sum(model.relation_emb_matrix.weight**2)
-
-            for aggregator in model.aggregators:
-                l2_loss = l2_loss + torch.sum(aggregator.fc_.weight**2)
-            loss = base_loss + model.l2_weight * l2_loss
-
+            loss = loss_fn(train_output, train_input_label)
             loss.backward()
             train_loss += loss.item()
 

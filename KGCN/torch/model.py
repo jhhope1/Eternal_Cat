@@ -14,7 +14,15 @@ class KGCN(nn.Module):
         self.entity_emb_matrix = nn.Embedding(num_embeddings=n_entity, embedding_dim=self.dim)
         self.relation_emb_matrix = nn.Embedding(num_embeddings=n_relation, embedding_dim=self.dim)
         self.fc = nn.ModuleList([nn.Linear(2*args.dim ,args.dim) for _ in range(args.n_iter)])
-    
+
+        nn.init.xavier_normal_(self.user_emb_matrix.weight)
+        nn.init.xavier_normal_(self.entity_emb_matrix.weight)
+        nn.init.xavier_normal_(self.relation_emb_matrix.weight)
+        for L in self.fc:
+            nn.init.xavier_normal_(L.weight)
+            L.bias.data.fill_(0.)
+
+
     def _parse_args(self, args, adj_entity, adj_relation):
         #[entity_num, neighbor_sample_size]
         self.adj_entity = adj_entity
@@ -53,7 +61,7 @@ class KGCN(nn.Module):
 
         for i in range(self.n_iter):
             if i == self.n_iter - 1:
-                aggregator = self.aggregator_class(self.batch_size, self.dim, self.fc[i], act = torch.selu)
+                aggregator = self.aggregator_class(self.batch_size, self.dim, self.fc[i], act = torch.tanh)
             else:
                 aggregator = self.aggregator_class(self.batch_size, self.dim, self.fc[i])
             self.aggregators.append(aggregator)
