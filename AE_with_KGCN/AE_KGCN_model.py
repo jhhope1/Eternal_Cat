@@ -245,7 +245,8 @@ class AE_KGCN(nn.Module):
             user_latent = self.encode2u(encode)
             res = self.aggregate(batch_entity_vectors, batch_relation_vectors, user_latent)
             ret = torch.bmm(res,torch.reshape(user_latent,(self.batch_size,self.dim,1))).reshape(self.batch_size,-1)
+            ret = nn.BatchNorm1d(ret.shape[1]).to(device)(ret)
             #g: innerproduct
-            return activation(self.decode(encode)+F.pad(ret, (0, self.layer_sizes[0][0]-self.n_item), "constant", 0) ,'sigmoid')
+            return activation(F.pad(ret, (0, self.layer_sizes[0][0]-self.n_item), "constant", 0) ,'sigmoid')
         else:
             return self.decode(self.encode(x))
