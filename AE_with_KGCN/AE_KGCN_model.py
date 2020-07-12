@@ -64,7 +64,7 @@ def activation(input, kind):
     raise ValueError('Unknown non-linearity type')
 
 class AE_KGCN(nn.Module):
-    def __init__(self, args, layer_sizes, dim, n_iter = 1,  n_entity = 25274, n_relation = 3,n_neighbor = 4, nl_type='selu', is_constrained=True, dp_drop_prob=0.0, last_layer_activations='none'):
+    def __init__(self, layer_sizes, dim, n_iter = 1,  n_entity = 25274, n_relation = 3,n_neighbor = 4, nl_type='selu', is_constrained=True, dp_drop_prob=0.0, last_layer_activations='none'):
         super(AE_KGCN, self).__init__()
         #KGCN hyper parameters
         self.n_relation = n_relation
@@ -227,7 +227,7 @@ class AE_KGCN(nn.Module):
         return z
 
     def forward(self, x):
-        KGCN = True
+        KGCN = False
         if KGCN:        
             if len(x.shape) == 2:
                 self.batch_size = x.shape[0]

@@ -30,25 +30,11 @@ test_ratio = 0.01
 random_seed = 10
 KGCN_dim = 16
 
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', type=str, default='music_kakao', help='which dataset to use')
-parser.add_argument('--aggregator', type=str, default='sum', help='which aggregator to use')
-parser.add_argument('--n_epochs', type=int, default=10, help='the number of epochs')
-parser.add_argument('--neighbor_sample_size', type=int, default=4, help='the number of neighbors to be sampled')
-parser.add_argument('--dim', type=int, default=4, help='dimension of user and entity embeddings')
-parser.add_argument('--n_iter', type=int, default=2, help='number of iterations when computing entity representation')
-parser.add_argument('--batch_size', type=int, default=8192, help='batch size')
-parser.add_argument('--l2_weight', type=float, default=1e-7, help='weight of l2 regularization')
-parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
-parser.add_argument('--ratio', type=float, default=1, help='size of training dataset')
-args = parser.parse_args()
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dp = nn.Dropout(p=noise_p)
-model = AE_KGCN_model.AE_KGCN(dim = KGCN_dim, layer_sizes = ((input_dim,500,500,500,1000),(1000,500,500,500,input_dim)), is_constrained=True, dp_drop_prob=0.8, args = args).to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=args.l2_weight)
+model = AE_KGCN_model.AE_KGCN(dim = KGCN_dim, layer_sizes = ((input_dim,500,500,500,1000),(1000,500,500,500,input_dim)), is_constrained=True, dp_drop_prob=0.8).to(device)
+optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-8)
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 
