@@ -10,36 +10,21 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
-input_dim = 31202
+input_dim = 57229
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 
-#file load
-taking_song = set()
-DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
-with open(DATA+"song_to_idx.json", 'r',encoding='utf-8') as f1:
+song_to_idx = {}
+tag_to_idx = {}
+with open(os.path.join(data_path, "song_to_idx.json"), 'r', encoding='utf-8') as f1:
     song_to_idx = json.load(f1)
-    for song, idx in song_to_idx.items():
-        taking_song.add(int(song))
-with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f2:
-    song_meta = json.load(f2)
-with open(DATA+"idx_to_item.json", 'r', encoding='utf-8') as f3:
-    idx_to_item = json.load(f3)
-with open(DATA+"entity_to_idx.json", 'r', encoding='utf-8') as f4:
-    entity_to_idx = json.load(f4)
-with open(DATA+"relation_to_idx.json", 'r', encoding='utf-8') as f5:
-    relation_to_idx = json.load(f5)
-kg = {}
-for line in open(DATA+"kg.txt", 'r', encoding='utf-8'):
-    array = line.strip().split(' ')
-    head_old = array[0]
-    relation_old = array[1]
-    tail_old = array[2]
-    if song_to_idx[str(head_old)] not in kg:
-        kg[song_to_idx[str(head_old)]] = [(relation_to_idx[relation_old],entity_to_idx[tail_old])]
-    else:
-        kg[song_to_idx[str(head_old)]].append((relation_to_idx[relation_old],entity_to_idx[tail_old]))
+with open(os.path.join(data_path,"tag_to_idx.json"), 'r', encoding='utf-8') as f2:
+    tag_to_idx = json.load(f2)
+with open(os.path.join(data_path,"res_song_to_entityidx.json"), 'r', encoding='utf-8') as f3:
+    song_to_entityidx = json.load(f3)
+with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8') as f3:
+    entity_to_idx = json.load(f3)
 
 class Noise_p(object):
     def __init__(self, noise_p):
@@ -47,13 +32,23 @@ class Noise_p(object):
 
     def __call__(self, sample):
         input_one_hot = sample['input_one_hot']
-        non_zero_indices = sample['non_zero_indices']
-        input_non_zero_indices = np.random.choice(non_zero_indices, replace=False,
-                           size=int(non_zero_indices.size * (1-self.noise_p)))
-        input_one_hot = np.zeros_like(input_one_hot)
-        if input_non_zero_indices.size != 0:
-            input_one_hot[input_non_zero_indices] = 1
-        return {'input_one_hot': input_one_hot, 'target_one_hot' : sample['target_one_hot'], 'input_non_zero_indices' : input_non_zero_indices, 'target_non_zero_indices' : non_zero_indices}
+        input_song = sample['input_song']
+        input_tag = sample['input_tag']
+
+        noise_input_song = np.random.choice(input_song, replace=False,
+                           size=int(input_song.size * (1-self.noise_p)))
+        noise_input_tag = np.random.choice(input_tag, replace=False,
+                           size=int(input_tag.size * (1-self.noise_p)))
+
+        noise_input_one_hot = np.zeros_like(input_one_hot)
+        
+        for song in noise_input_song:
+            if song_to_idx.get(str(song)) != None:
+                noise_input_one_hot[song_to_idx[str(song)]] = 1
+        for tag in noise_input_tag:
+            if tag_to_idx.get(tag) != None:
+                noise_input_one_hot[tag_to_idx[tag]] = 1
+        return {'input_one_hot': noise_input_one_hot, 'target_one_hot' : sample['target_one_hot'], 'noise_input_song' : noise_input_song, 'noise_input_tag' : noise_input_tag, 'target_song' : input_song, 'target_tag' : input_tag}
 
 class Noise_uniform(object):
     def __call__(self, sample):
@@ -64,6 +59,18 @@ class Noise_uniform(object):
         if zero_indices.size != 0:
             input_one_hot[zero_indices] = 0
         return {'input_one_hot': input_one_hot, 'target_one_hot': sample['target_one_hot']}
+class add_meta(object):
+    def __call__(self,sample):
+        noise_input_song = sample['noise_input_song']
+        meta = np.zeros(len(entity_to_idx))
+        for song in noise_input_song:
+            if str(song) not in song_to_entityidx:
+                continue
+            for idx in song_to_entityidx[str(song)]:
+                meta[idx] += 1
+        sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , meta))
+        return sample
+            
 
 
 class PlaylistDataset(Dataset):
@@ -89,20 +96,22 @@ class PlaylistDataset(Dataset):
         songs, tags = self.training_set[idx]['songs'], self.training_set[idx]['tags']
         input_one_hot = np.zeros(input_dim)
 
-        non_zero_indices = []
+        input_song = []
+        input_tag = []
         for song in songs:
+            input_song.append(song)  #not string
             if self.song_to_idx.get(str(song)) != None:
                 input_one_hot[self.song_to_idx[str(song)]] = 1
-                non_zero_indices.append(self.song_to_idx[str(song)])
         for tag in tags:
+            input_tag.append(tag)
             if self.tag_to_idx.get(tag) != None:
                 input_one_hot[self.tag_to_idx[tag]] = 1
-                non_zero_indices.append(self.tag_to_idx[tag])
 
-        non_zero_indices = np.array(non_zero_indices)
+        input_song = np.array(input_song)
+        input_tag = np.array(input_tag)
         #playlist_vec: one hot vec of i'th playlist
 
-        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'non_zero_indices' : non_zero_indices}
+        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag}
 
         if self.transform:
             sample = self.transform(sample)
@@ -114,7 +123,6 @@ class ToTensor(object):
     """numpy array를 tensor(torch)로 변환 시켜줍니다."""
 
     def __call__(self, sample):
-        input_one_hot, target_one_hot = sample['input_one_hot'], sample['target_one_hot']
-        if torch.cuda.is_available():
-            return {'input_one_hot': torch.FloatTensor(input_one_hot).to(device),
-                'target_one_hot': torch.FloatTensor(target_one_hot).to(device)}
+        meta_input_one_hot = torch.from_numpy(sample['meta_input_one_hot']).type(torch.FloatTensor).to(device)
+        target_one_hot = torch.from_numpy(sample['target_one_hot']).type(torch.FloatTensor).to(device)
+        return {'meta_input_one_hot':meta_input_one_hot,'target_one_hot':target_one_hot}

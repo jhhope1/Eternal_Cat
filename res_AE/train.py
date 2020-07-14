@@ -1,5 +1,5 @@
 from __future__ import print_function
-import AE_KGCN_model
+import res_AE_model
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch import nn, optim
@@ -14,32 +14,36 @@ import playlist_batchmaker as pb
 import split_data
 import os
 
-input_dim = 31202
+batch_size = 512
+random_seed = 10
+validation_ratio = 0.01
+test_ratio = 0.01
+train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
+
+input_dim = 100058
+output_dim = 57229
 noise_p = 0.5
 extract_num = 100
 aug_step = 0 #얼마가 최적일까?
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
-model_PATH = os.path.join(data_path, './AE_weight.pth')
-batch_size = 50
+model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
-log_interval = 150
-validation_ratio = 0.01
-test_ratio = 0.01
-random_seed = 10
-KGCN_dim = 16
+log_interval = 100
+learning_rate = 1e-9
+weight_decay = 0
+layer_sizes = (input_dim,300,300,300,300,300,300,300,300,300,300,300,300,300,300,300,output_dim)
+dropout_p = dp_drop_prob=0.8
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p).to(device)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight 추가
 
 dp = nn.Dropout(p=noise_p)
-model = AE_KGCN_model.AE_KGCN(dim = KGCN_dim, layer_sizes = ((input_dim,500,500,500,1000),(2000,500,500,500,input_dim)), is_constrained=False, dp_drop_prob=0.8).to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-8)
-train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 
-# Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x):
-    BCE = F.binary_cross_entropy(recon_x, x.view(-1, input_dim), reduction='mean')
+    BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
     return BCE
 
 def train(epoch, is_load = True):#Kakao AE
@@ -49,21 +53,22 @@ def train(epoch, is_load = True):#Kakao AE
     train_loss = 0
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
-        recon_batch = model(data['input_one_hot'])
+        recon_batch = model(data['meta_input_one_hot'])
         loss = loss_function(recon_batch, data['target_one_hot'])
-        loss.backward(retain_graph=True)
+        loss.backward()
         train_loss += loss.item()
         optimizer.step()
 
         if aug_step > 0:
             # Dense refeed
             for _ in range(aug_step):
-                inputs = recon_batch.detach()
+                noised_inputs = recon_batch.detach()
                 if noise_p > 0.0:
-                    noised_inputs = dp(inputs)
+                    noised_inputs = dp(noised_inputs)
+                meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot'].narrow(1,0,input_dim-output_dim)], dim = 1)
                 optimizer.zero_grad()
-                recon_batch = model(noised_inputs)
-                loss = loss_function(recon_batch, inputs)
+                recon_batch = model(meta_noised_inputs)
+                loss = loss_function(recon_batch, noised_inputs)
                 loss.backward()
                 optimizer.step()
 
@@ -74,7 +79,7 @@ def train(epoch, is_load = True):#Kakao AE
                 loss.item() / len(data)))   
 
     print('====> Epoch: {} Average loss: {:.4f}'.format(
-          epoch, train_loss / batch_size))
+          epoch, train_loss / len(train_loader)))
     torch.save(model.state_dict(), model_PATH)
 
 def test_accuracy():
@@ -84,15 +89,15 @@ def test_accuracy():
     total_lostsong = 0
     correct = 0
     for data in test_loader:
-        noise_img = data['input_one_hot']
+        noise_img = data['meta_input_one_hot']
         img = data['target_one_hot']
         output = model(noise_img)
         _, indices = torch.topk(output, extract_num, dim = 1)
 
-        diff = img - noise_img
+        diff = img - noise_img.narrow(1,0,output_dim)
 
         total_lostsong += torch.sum(diff.view(-1))
-        one_hot = torch.zeros(indices.size(0), input_dim).to(device)
+        one_hot = torch.zeros(indices.size(0), output_dim).to(device)
         one_hot = one_hot.scatter(1, indices.cuda().data, 1)
 
         one_hot_filter = one_hot * diff
@@ -101,5 +106,5 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=False)
+        train(epoch = epoch, is_load=True)
         test_accuracy()

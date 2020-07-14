@@ -79,7 +79,6 @@ class AE_KGCN(nn.Module):
         self.relation_emb_matrix = nn.Embedding(num_embeddings=n_relation, embedding_dim=self.dim)
         self.entity_vectors = []
         self.relation_vectors = []
-
         #step for iter_n = 1
         self.get_neighbors()
 
@@ -227,26 +226,16 @@ class AE_KGCN(nn.Module):
 
     def forward(self, x):
         KGCN = True
-        if KGCN:        
+        encode = self.encode(x)
+        if KGCN:
             if len(x.shape) == 2:
                 self.batch_size = x.shape[0]
             else:
                 self.batch_size = 1
-            
-            batch_entity_vectors = []
-            batch_relation_vectors = []
-            for i in range(self.n_iter+1):
-                batch_entity_vectors.append(self.entity_vectors[i].to(device)) #same for all batch
-                if i==self.n_iter:
-                    break
-                batch_relation_vectors.append(self.relation_vectors[i].to(device))#same for all batch
-            
-            encode = self.encode(x)
             user_latent = self.encode2u(encode)
-            res = self.aggregate(batch_entity_vectors, batch_relation_vectors, user_latent)
+            res = self.aggregate(self.entity_vectors, self.relation_vectors, user_latent)
             ret = torch.bmm(res,torch.reshape(user_latent,(self.batch_size,self.dim,1))).reshape(self.batch_size,-1)
-            ret = nn.BatchNorm1d(ret.shape[1]).to(device)(ret)
             #g: innerproduct
-            return activation(F.pad(ret, (0, self.layer_sizes[0][0]-self.n_item), "constant", 0) ,'sigmoid')
+            return activation(self.decode(torch.cat((encode,self.encode(F.pad(ret, (0, self.layer_sizes[0][0]-self.n_item), "constant", 0))),dim = -1)),'sigmoid')
         else:
-            return self.decode(self.encode(x))
+            return activation(self.decode(encode),'sigmoid')
