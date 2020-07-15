@@ -30,7 +30,7 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 1e-3
+learning_rate = 3e-4
 weight_decay = 1e-10
 layer_sizes = (input_dim,500,500,500,output_dim)
 dropout_p = dp_drop_prob=0.8
