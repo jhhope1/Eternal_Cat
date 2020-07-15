@@ -51,7 +51,8 @@ class res_AutoEncoder(nn.Module):
       L.bias.data.fill_(0.)
 
     self.MLP_bn = nn.ModuleList([torch.nn.BatchNorm1d(layer_sizes[i+1]) for i in range(len(layer_sizes)-2)])
-    self.dp = nn.Dropout(self._dp_drop_prob)
+    if self._dp_drop_prob>0:
+      self.dp = nn.Dropout(self._dp_drop_prob)
 
   def forward(self, x):
     MLP_output = x
@@ -69,7 +70,8 @@ class res_AutoEncoder(nn.Module):
         if x.shape[1]==MLP_output.shape[1]:
           x = x + MLP_output #chk if idx-1 = len(MLP_output)-2
         MLP_output = x
-        x = self.dp(x)
+        if self._dp_drop_prob>0:
+          x = self.dp(x)
       '''if idx == int(len(self.layer_sizes)/2):
         x = self.dp(x)'''
     return activation(x, self._last_layer_activations)

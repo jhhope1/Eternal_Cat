@@ -1,11 +1,13 @@
 import os
 import numpy as np
 import json
-from itertools import combinations 
+from itertools import combinations
 
 DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
 
-with open(DATA + "val.json", 'r', encoding='utf-8') as f1:
+l_num = 1000
+
+with open(DATA + "train.json", 'r', encoding='utf-8') as f1:
     train = json.load(f1)
 
 with open(DATA+"song_meta.json", "r", encoding = 'utf-8') as f2:
@@ -45,6 +47,15 @@ for playlist in train:
         a = song_meta[song]
 
 sorted_l = sorted(l_map.items(), reverse = True, key=lambda item: item[1])
+
+letter_to_idx = {}
+for i, k in enumerate(sorted_l):
+    if k not in letter_to_idx:
+        letter_to_idx[k[0]] = i
+
+with open(DATA + "res_letter_to_idx.json", 'w', encoding='utf-8') as f3:
+    json.dump(letter_to_idx,f3, ensure_ascii=False)
+
 s = 0
 for i in song_len:
     s+=song_len[i]

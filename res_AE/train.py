@@ -1,16 +1,10 @@
 from __future__ import print_function
 import res_AE_model
 import torch
-from torch.utils.data import Dataset, DataLoader
 from torch import nn, optim
 from torch.nn import functional as F
-from torchvision import datasets, transforms
-from torchvision.utils import save_image
-import torch
-import random
 import numpy as np
 import json
-import playlist_batchmaker as pb
 import split_data
 import os
 
@@ -20,7 +14,7 @@ validation_ratio = 0.01
 test_ratio = 0.01
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
-input_dim = 100058
+input_dim = 101252
 output_dim = 57229
 noise_p = 0.5
 extract_num = 100
@@ -30,10 +24,10 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 3e-4
+learning_rate = 1e-3
 weight_decay = 1e-10
-layer_sizes = (input_dim,500,500,500,output_dim)
-dropout_p = dp_drop_prob=0.8
+layer_sizes = (input_dim,300,300,300,300,300,300,300,300,300,300,300,300,300,output_dim)
+dropout_p = dp_drop_prob=0.0
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p).to(device)
@@ -106,5 +100,5 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
+        train(epoch = epoch, is_load=False)
         test_accuracy()

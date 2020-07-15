@@ -23,6 +23,5 @@ model.to(device)
 def inference(one_hot: torch.Tensor): #one_hot: torch.FloatTensor
     with torch.no_grad():
         recon = model(one_hot).to(device)
-        #recon = model(torch.FloatTensor([one_hot]).to(device))
         return recon
 

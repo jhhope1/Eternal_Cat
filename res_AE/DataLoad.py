@@ -11,8 +11,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 input_dim = 57229
-tag_missing = 1/3
-song_missing = 1/5
+tag_missing_ply_false = 0.5 #1745/(2628+1745)
+tag_missing_ply_true = 0.3 #1745/(2628+1745)
+plylst_missing = 0.81
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
@@ -25,10 +26,12 @@ with open(os.path.join(data_path,"tag_to_idx.json"), 'r', encoding='utf-8') as f
     tag_to_idx = json.load(f2)
 with open(os.path.join(data_path,"res_song_to_entityidx.json"), 'r', encoding='utf-8') as f3:
     song_to_entityidx = json.load(f3)
-with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8') as f3:
-    entity_to_idx = json.load(f3)
+with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8') as f4:
+    entity_to_idx = json.load(f4)
+with open(os.path.join(data_path,"res_letter_to_idx.json"), 'r', encoding='utf-8') as f5:
+    letter_to_idx = json.load(f5)
 
-class Noise_p(object):
+class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['include_plylst']' part
     def __init__(self, noise_p):
         self.noise_p = noise_p
 
@@ -44,18 +47,26 @@ class Noise_p(object):
 
         noise_input_one_hot = np.zeros_like(input_one_hot)
         
-
-        if random.random()>song_missing:
+        if sample['include_plylst']:
+            if random.random()>tag_missing_ply_true:
+                for tag in noise_input_tag:
+                    if tag_to_idx.get(tag) != None:
+                        noise_input_one_hot[tag_to_idx[tag]] = 1
+        else:
             for song in noise_input_song:
                 if song_to_idx.get(str(song)) != None:
                     noise_input_one_hot[song_to_idx[str(song)]] = 1
-        if random.random()>tag_missing:
-            for tag in noise_input_tag:
-                if tag_to_idx.get(tag) != None:
-                    noise_input_one_hot[tag_to_idx[tag]] = 1
-        
-                    
-        return {'input_one_hot': noise_input_one_hot, 'target_one_hot' : sample['target_one_hot'], 'noise_input_song' : noise_input_song, 'noise_input_tag' : noise_input_tag, 'target_song' : input_song, 'target_tag' : input_tag}
+            if random.random()>tag_missing_ply_false:
+                for tag in noise_input_tag:
+                    if tag_to_idx.get(tag) != None:
+                        noise_input_one_hot[tag_to_idx[tag]] = 1 
+
+        sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
+        sample['noise_input_song'] = noise_input_song
+        sample['noise_input_tag'] = noise_input_tag
+        sample['target_song'] = input_song
+        sample['target_tag'] = input_tag
+        return sample
 
 class Noise_uniform(object):
     def __call__(self, sample):
@@ -71,12 +82,23 @@ class add_meta(object):
         noise_input_song = sample['noise_input_song']
         meta = np.zeros(len(entity_to_idx))
         for song in noise_input_song:
-            if str(song) not in song_to_entityidx:
-                continue
-            for idx in song_to_entityidx[str(song)]:
-                meta[idx] += 1
+            if str(song) in song_to_entityidx:
+                for idx in song_to_entityidx[str(song)]:
+                    meta[idx] += 1
         sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , meta))
         return sample
+class add_plylst_meta(object):
+    def __call__(self,sample):
+        plylst_meta = np.zeros(len(letter_to_idx))
+        if random.random()>plylst_missing:
+            for plylst_title in sample['plylst_title']:
+                for l in plylst_title:
+                    if l in letter_to_idx:
+                        plylst_meta[letter_to_idx[l]] += 1
+            sample['include_plylst'] = True
+        sample['plylst_meta'] = plylst_meta
+        return sample
+
 class PlaylistDataset(Dataset):
     """Playlist target dataset."""
 
@@ -99,6 +121,8 @@ class PlaylistDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         songs, tags = self.training_set[idx]['songs'], self.training_set[idx]['tags']
+        plylst_title = self.training_set[idx]['plylst_title']
+
         input_one_hot = np.zeros(input_dim)
 
         input_song = []
@@ -116,7 +140,7 @@ class PlaylistDataset(Dataset):
         input_tag = np.array(input_tag)
         #playlist_vec: one hot vec of i'th playlist
 
-        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag}
+        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'include_plylst' : False}
 
         if self.transform:
             sample = self.transform(sample)
