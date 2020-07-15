@@ -33,6 +33,8 @@ with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
             continue
         for genre in song_data["song_gn_gnr_basket"]:
             add_entity_idx(genre)
+        for genre in song_data["song_gn_dtl_gnr_basket"]:
+            add_entity_idx(genre)
         album = song_data["album_id"]
         add_entity_idx("al."+str(album))
         for artist in song_data["artist_id_basket"]:
@@ -45,6 +47,8 @@ with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
     data = json.load(f1)
     for song_idx, song_data in enumerate(data):
         for genre in song_data["song_gn_gnr_basket"]:
+            add_entity(song_idx,genre)
+        for genre in song_data["song_gn_dtl_gnr_basket"]:
             add_entity(song_idx,genre)
         album = song_data["album_id"]
         add_entity(song_idx,"al."+str(album))

@@ -15,7 +15,9 @@ idx_to_item = []
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 
-batch_size = 128 #adjust up to your memory limit
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+batch_size = 512 #adjust up to your memory limit
 use_meta = True #toggle if you don't want to use meta
 
 with open(os.path.join(data_path, "song_to_idx.json"), 'r', encoding='utf-8') as f1:
@@ -49,10 +51,9 @@ onehot_len = output_dim + entity_size if use_meta else output_dim
 song_add = 100
 tag_add = 10
 
-eps = 0.1
+eps = torch.tensor(0.1).to(device)
 def zero_one_normalize(x: torch.Tensor): #[eps,1] normalize
-    x = x - torch.min(x)
-    return x / torch.max(x) + eps
+    return x + eps
 
 val_file = os.path.join(data_path, "val.json")
 res_file = os.path.join(data_path, "results.json")
@@ -96,20 +97,20 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             input_one_hot[j - st][tag_idxlist] = 1
             mask[j - st][tag_idxlist] = 0
         #Inference start
-        inferenced = mi.inference(input_one_hot)
+        inferenced = mi.inference(input_one_hot.to(device))
         infer_normalized = zero_one_normalize(inferenced)
-        infer_masked = infer_normalized * mask
+        infer_masked = infer_normalized * mask.to(device)
 
-        song_masked = infer_masked.narrow(dim = 1, start = 0, length = song_size)
-        tag_masked  = infer_masked.narrow(dim = 1, start = song_size, length = tag_size)
+        song_masked = infer_masked.narrow(dim = 1, start = 0, length = song_size).to(device)
+        tag_masked  = infer_masked.narrow(dim = 1, start = song_size, length = tag_size).to(device)
 
-        _, song_indices = torch.topk(song_masked, song_add, dim = 1)
-        _, tag_indices  = torch.topk(tag_masked, tag_add, dim = 1)
+        song_indices = torch.topk(song_masked, song_add, dim = 1)[1].to('cpu').numpy()
+        tag_indices  = torch.topk(tag_masked, tag_add, dim = 1)[1].to('cpu').numpy()
         tag_indices = tag_indices + song_size #correcting to the indices for idx_to_item
 
         for j in range(st, ed):
-            loc_song = song_indices[j - st].tolist()
-            loc_tag =  tag_indices[j - st].tolist()
+            loc_song = song_indices[j - st]
+            loc_tag =  tag_indices[j - st]
             loc_song = [int(idx_to_item[idx]) for idx in loc_song]
             loc_tag = [idx_to_item[idx] for idx in loc_tag]
             inf_ans = {}
@@ -117,7 +118,7 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             inf_ans['songs'] = loc_song
             inf_ans['tags'] = loc_tag
             ans_list.append(inf_ans)
-            if j % 1000 == 0:
+            if j % 10000 == 0:
                 print('no. ', j)
                 print(inf_ans['songs'])
                 print(inf_ans['tags'])

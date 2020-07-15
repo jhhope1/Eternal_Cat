@@ -69,6 +69,7 @@ class res_AutoEncoder(nn.Module):
         if x.shape[1]==MLP_output.shape[1]:
           x = x + MLP_output #chk if idx-1 = len(MLP_output)-2
         MLP_output = x
+        x = self.dp(x)
       '''if idx == int(len(self.layer_sizes)/2):
         x = self.dp(x)'''
     return activation(x, self._last_layer_activations)

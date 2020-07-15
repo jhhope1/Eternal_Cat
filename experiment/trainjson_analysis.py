@@ -5,7 +5,7 @@ from itertools import combinations
 
 DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
 
-with open(DATA + "train.json", 'r', encoding='utf-8') as f1:
+with open(DATA + "val.json", 'r', encoding='utf-8') as f1:
     train = json.load(f1)
 
 with open(DATA+"song_meta.json", "r", encoding = 'utf-8') as f2:
@@ -22,11 +22,36 @@ for playlist in train:
 for song in song_meta:
     song_name_set.add(song['song_name'])
     album_name_set.add(song['album_name'])
-    for artist_name_name in song['album_name']:
-        album_name_set.add(album_name)
+    if song['album_name']!=None:
+        for artist_name in song['album_name']:
+            artist_name_set.add(artist_name)
 
-
+l_set = set()
+l_map = {}
+song_len = {}
 for playlist in train:
     title = playlist['plylst_title']
-    substrings = [test_str[x:y] for x, y in combinations(range(len(test_str) + 1), r = 2)]
-    for s in substrings:
+    if len(playlist['tags']) not in song_len:
+        song_len[len(playlist['tags'])] = 1
+    else:
+        song_len[len(playlist['tags'])] += 1
+    for l in title:
+        l_set.add(l)
+        if l in l_map:
+            l_map[l]+=1
+        else:
+            l_map[l]=1
+    for song in playlist['songs']:
+        a = song_meta[song]
+
+sorted_l = sorted(l_map.items(), reverse = True, key=lambda item: item[1])
+s = 0
+for i in song_len:
+    s+=song_len[i]
+d = 0
+for a, i in enumerate(song_len):
+    if a==0:
+        d+=i
+    else:
+        d-=i/(2**a)
+A = 1

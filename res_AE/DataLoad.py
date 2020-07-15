@@ -42,12 +42,17 @@ class Noise_p(object):
 
         noise_input_one_hot = np.zeros_like(input_one_hot)
         
-        for song in noise_input_song:
-            if song_to_idx.get(str(song)) != None:
-                noise_input_one_hot[song_to_idx[str(song)]] = 1
-        for tag in noise_input_tag:
-            if tag_to_idx.get(tag) != None:
-                noise_input_one_hot[tag_to_idx[tag]] = 1
+
+        if random.random()>self.song_missing:
+            for song in noise_input_song:
+                if song_to_idx.get(str(song)) != None:
+                    noise_input_one_hot[song_to_idx[str(song)]] = 1
+        if random.random()>self.tag_missing:
+            for tag in noise_input_tag:
+                if tag_to_idx.get(tag) != None:
+                    noise_input_one_hot[tag_to_idx[tag]] = 1
+        
+                    
         return {'input_one_hot': noise_input_one_hot, 'target_one_hot' : sample['target_one_hot'], 'noise_input_song' : noise_input_song, 'noise_input_tag' : noise_input_tag, 'target_song' : input_song, 'target_tag' : input_tag}
 
 class Noise_uniform(object):
@@ -70,6 +75,9 @@ class add_meta(object):
                 meta[idx] += 1
         sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , meta))
         return sample
+class add_ply_meta(object):
+    def __call__(self, sample):
+
             
 
 
@@ -77,6 +85,11 @@ class PlaylistDataset(Dataset):
     """Playlist target dataset."""
 
     def __init__(self, transform = Noise_p(0.5)):
+        self.tag_missing = 1/3
+        self.song_missing = 1/5
+        self.song_num = len(song_to_idx)
+        self.tag_num = len(tag_to_idx)
+
         with open(os.path.join(data_path, "train.json"), 'r', encoding='utf-8') as f1:
             self.training_set = json.load(f1)
 
