@@ -14,7 +14,7 @@ import playlist_batchmaker as pb
 import split_data
 import os
 
-batch_size = 512
+batch_size = 256
 random_seed = 10
 validation_ratio = 0.01
 test_ratio = 0.01
@@ -30,9 +30,9 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 1e-9
-weight_decay = 0
-layer_sizes = (input_dim,300,300,300,300,300,300,300,300,300,300,300,300,300,300,300,output_dim)
+learning_rate = 3e-4
+weight_decay = 1e-10
+layer_sizes = (input_dim,500,500,500,500,500,500,500,500,500,500,500,500,500,500,500,output_dim)
 dropout_p = dp_drop_prob=0.8
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
