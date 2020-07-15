@@ -19,6 +19,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 512 #adjust up to your memory limit
 use_meta = True #toggle if you don't want to use meta
+use_ply_meta = True
 
 with open(os.path.join(data_path, "song_to_idx.json"), 'r', encoding='utf-8') as f1:
     song_to_idx = json.load(f1)
@@ -43,11 +44,18 @@ with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8
     entity_to_idx = json.load(f3)
     entity_size = len(entity_to_idx)
 
-entity_to_idx_keyset = set(entity_to_idx.keys())
+
+with open(os.path.join(data_path,"res_letter_to_idx.json"), 'r', encoding='utf-8') as f5:
+    letter_to_idx = json.load(f5)
+    l_num = len(letter_to_idx)
+
+letter_to_idx_keyset = set(letter_to_idx.keys())
+song_to_entityidx_key_set = set(song_to_entityidx.keys())
 
 import model_inference as mi
 
 onehot_len = output_dim + entity_size if use_meta else output_dim
+onehot_len = onehot_len + l_num if use_ply_meta else onehot_len
 song_add = 100
 tag_add = 10
 
@@ -77,6 +85,7 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             #song extraction and tensorization
             noise_input_song = []
             song_set = set(val_list[j]['songs'])
+            plylst_title_list = list(val_list[j]['plylst_title'])
             noise_input_song = list(song_set)
             song_set = {str(song) for song in song_set} #convert to string
             song_list_refined = list(song_set.intersection(song_to_idx_keyset))
@@ -84,9 +93,14 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             input_one_hot[j - st][song_idxlist] = 1
             mask[j - st][song_idxlist] = 0
 
+            if use_ply_meta:
+                l_list_idxlist = [output_dim + letter_to_idx[lname] for lname in plylst_title_list if lname in letter_to_idx]
+                input_one_hot[j - st][l_list_idxlist] += 1
+
             if use_meta:
-                entity_list_refined = list(song_set.intersection(entity_to_idx_keyset))
-                entity_idxlist = [output_dim + entity_to_idx[sname] for sname in entity_list_refined] 
+                song_key_list_refined = list(song_set.intersection(song_to_entityidx_key_set))
+                for sname in song_key_list_refined:
+                    entity_idxlist = [output_dim + l_num + entity for entity in song_to_entityidx[sname]] 
                 #replacing concatenation; depends on output_dim
                 input_one_hot[j - st][entity_idxlist] = 1
             
