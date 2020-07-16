@@ -25,12 +25,12 @@ model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
 learning_rate = 1e-3
-weight_decay = 1e-9
-layer_sizes = (input_dim,500,500,1000,500,500,output_dim)
-dropout_p = 0.7
+weight_decay = 1e-10
+layer_sizes = (input_dim,300,300,300,300,300,300,300,300,300,300,300,300,300,output_dim)
+dropout_p = 0.0
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=False).to(device)
+model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=True).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight 추가
 
 dp = nn.Dropout(p=noise_p)

@@ -2,9 +2,13 @@ import os
 import numpy as np
 import json
 from itertools import combinations
-
+import torch
 DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
+A = [1,1,1,1,1,2,3]
+B = torch.tensor([0,0,0,0,0])
 
+B[A] += 1
+print (B)
 l_num = 1000
 
 with open(DATA + "train.json", 'r', encoding='utf-8') as f1:

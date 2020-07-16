@@ -8,6 +8,7 @@ output_dim = 57229
 song_size = 0
 tag_size = 0
 entity_size = 0
+l_num = 0
 song_to_idx = {}
 tag_to_idx = {}
 idx_to_item = []
@@ -94,16 +95,17 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             mask[j - st][song_idxlist] = 0
 
             if use_ply_meta:
-                l_list_idxlist = [output_dim + letter_to_idx[lname] for lname in plylst_title_list if lname in letter_to_idx]
-                input_one_hot[j - st][l_list_idxlist] += 1
+                for lname in plylst_title_list:
+                    if lname in letter_to_idx:
+                        input_one_hot[j - st][output_dim + letter_to_idx[lname]] += 1
 
             if use_meta:
                 song_key_list_refined = list(song_set.intersection(song_to_entityidx_key_set))
                 entity_idxlist = []
                 for sname in song_key_list_refined:
-                    entity_idxlist += [output_dim + l_num + entity for entity in song_to_entityidx[sname]] 
+                    for entityidx in song_to_entityidx[sname]:
+                        input_one_hot[j - st][output_dim + l_num + entityidx] += 1
                 #replacing concatenation; depends on output_dim
-                input_one_hot[j - st][entity_idxlist] += 1
             
             #tag extraction and tensorization
             tag_set = set(val_list[j]['tags'])

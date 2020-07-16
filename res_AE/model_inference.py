@@ -15,7 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 D_ = 500 #layer dim
 
-layer_sizes = (input_dim,500,500,1000,500,500,output_dim)
+layer_sizes = (input_dim,300,300,300,300,300,300,300,300,300,300,300,300,300,output_dim)
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes).to(device)
 model.load_state_dict(torch.load(os.path.join(data_path,model_PATH), map_location = device))
 model.eval()
