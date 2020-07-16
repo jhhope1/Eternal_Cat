@@ -99,10 +99,11 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
 
             if use_meta:
                 song_key_list_refined = list(song_set.intersection(song_to_entityidx_key_set))
+                entity_idxlist = []
                 for sname in song_key_list_refined:
-                    entity_idxlist = [output_dim + l_num + entity for entity in song_to_entityidx[sname]] 
+                    entity_idxlist += [output_dim + l_num + entity for entity in song_to_entityidx[sname]] 
                 #replacing concatenation; depends on output_dim
-                input_one_hot[j - st][entity_idxlist] = 1
+                input_one_hot[j - st][entity_idxlist] += 1
             
             #tag extraction and tensorization
             tag_set = set(val_list[j]['tags'])
