@@ -31,7 +31,7 @@ D_ = 300
 dropout_p = 0.0
 
 #train type of nn
-type_nn = ['song_meta_tag', 'title']#, 'title_tag', 'song_meta']
+type_nn = ['song_meta_tag']#, 'title', 'title_tag', 'song_meta']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
 input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
 layer_sizes = {name: (input_dim[name],D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim) for name in type_nn}
@@ -65,8 +65,8 @@ def train(epoch ,id_nn, is_load = True):#Kakao AE
         model[id_nn].train()
         optimizer[id_nn].zero_grad()
 
-        recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn].to(device)) #need to be modified
-        loss = loss_function(recon_batch, data['target_one_hot'].to(device)) #you too
+        recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn]) #need to be modified
+        loss = loss_function(recon_batch, data['target_one_hot']) #you too
         loss.backward()
         train_loss += loss.item()
         optimizer[id_nn].step()
@@ -101,8 +101,8 @@ def test_accuracy(id_nn):
         total_lostsong = 0
         correct = 0
         for data in test_loader[id_nn]:
-            noise_img = data['meta_input_one_hot_' + id_nn].to(device)
-            img = data['target_one_hot'].to(device)
+            noise_img = data['meta_input_one_hot_' + id_nn]
+            img = data['target_one_hot']
             output = model[id_nn](noise_img) #is this right?
             _, indices = torch.topk(output, extract_num, dim = 1)
 
@@ -134,5 +134,5 @@ def test_accuracy(id_nn):
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
         for id_nn in type_nn:
-            train(epoch = epoch, id_nn = id_nn , is_load=False)
+            train(epoch = epoch, id_nn = id_nn , is_load=True)
             test_accuracy(id_nn)

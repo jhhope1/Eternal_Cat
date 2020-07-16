@@ -47,49 +47,42 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
         self.noise_p = noise_p
 
     def __call__(self, sample):
-        input_one_hot = sample['input_one_hot']
         input_song = sample['input_song']
         input_tag = sample['input_tag']
 
-        noise_input_song = np.random.choice(input_song, replace=False,
-                           size=int(input_song.size * (1-self.noise_p)))
-        noise_input_tag = np.random.choice(input_tag, replace=False,
-                           size=int(input_tag.size * (1-self.noise_p)))
-
-        noise_input_one_hot = np.zeros_like(input_one_hot)
-
-        for song in noise_input_song:
-            if song_to_idx.get(str(song)) != None:
-                noise_input_one_hot[song_to_idx[str(song)]] = 1
-        for tag in noise_input_tag:
-            if tag_to_idx.get(tag) != None:
-                noise_input_one_hot[tag_to_idx[tag]] = 1 
-
         if 'song' in sample['id_nn']:
-            noise_song_one_hot = noise_input_one_hot[0 : song_size]
-        if 'tag' in sample['id_nn']:
-            noise_tag_one_hot = noise_input_one_hot[song_size : song_size+tag_size]
-
-        if 'song' in sample['id_nn']:
+            noise_input_song = np.random.choice(input_song, replace=False,
+                            size=int(input_song.size * (1-self.noise_p)))
+            noise_song_one_hot = np.zeros(song_size)
+            for song in noise_input_song:
+                if song_to_idx.get(str(song)) != None:
+                    noise_song_one_hot[song_to_idx[str(song)]] = 1
             sample['noise_song_one_hot'] = noise_song_one_hot
+            sample['noise_input_song'] = noise_input_song
+
         if 'tag' in sample['id_nn']:
+            noise_input_tag = np.random.choice(input_tag, replace=False,
+                            size=int(input_tag.size * (1-self.noise_p)))
+            noise_tag_one_hot = np.zeros(tag_size)
+            for tag in noise_input_tag:
+                if tag_to_idx.get(tag) != None:
+                    noise_tag_one_hot[tag_to_idx[tag]-song_size] = 1 
             sample['noise_tag_one_hot'] = noise_tag_one_hot
-        sample['noise_input_song'] = noise_input_song
-        sample['noise_input_tag'] = noise_input_tag
+            sample['noise_input_tag'] = noise_input_tag
+
         sample['target_song'] = input_song
         sample['target_tag'] = input_tag
         return sample
 
 class add_meta(object):
     def __call__(self,sample):
-        noise_input_song = sample['noise_input_song']
         if 'song' in sample['id_nn']:
             meta = np.zeros(len(entity_to_idx))
-            for song in noise_input_song:
+            for song in sample['noise_input_song']:
                 if str(song) in song_to_entityidx:
                     for idx in song_to_entityidx[str(song)]:
                         meta[idx] += 1
-        #sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , meta))
+
         if 'title' in sample['id_nn']:
             if 'tag' in sample['id_nn']:
                 sample['meta_input_one_hot_title_tag'] = np.concatenate((sample['plylst_meta'], sample['noise_tag_one_hot']))
@@ -140,22 +133,22 @@ class PlaylistDataset(Dataset):
         songs, tags = self.training_set[idx]['songs'], self.training_set[idx]['tags']
         plylst_title = self.training_set[idx]['plylst_title']
 
-        input_one_hot = np.zeros(input_dim)
+        target_one_hot = np.zeros(input_dim)
         input_song = []
         input_tag = []
         for song in songs:
             input_song.append(song)  #not string
             if self.song_to_idx.get(str(song)) != None:
-                input_one_hot[self.song_to_idx[str(song)]] = 1
+                target_one_hot[self.song_to_idx[str(song)]] = 1
         for tag in tags:
             input_tag.append(tag)
             if self.tag_to_idx.get(tag) != None:
-                input_one_hot[self.tag_to_idx[tag]] = 1
+                target_one_hot[self.tag_to_idx[tag]] = 1
 
         input_song = np.array(input_song)
         input_tag = np.array(input_tag)
         #playlist_vec: one hot vec of i'th playlist
-        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'id_nn' : self.id_nn}
+        sample = {'target_one_hot' : target_one_hot, 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'id_nn' : self.id_nn}
 
         if self.transform:
             sample = self.transform(sample)
