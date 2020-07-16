@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 input_dim = 57229
-device = torch.device("cpu")#"cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 type_nn = ['title', 'title_tag', 'song_meta_tag', 'song_meta']
@@ -65,12 +65,15 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
             if tag_to_idx.get(tag) != None:
                 noise_input_one_hot[tag_to_idx[tag]] = 1 
 
-        noise_song_one_hot = noise_input_one_hot[0 : song_size]
-        noise_tag_one_hot = noise_input_one_hot[song_size : song_size+tag_size]
+        if 'song' in sample['id_nn']:
+            noise_song_one_hot = noise_input_one_hot[0 : song_size]
+        if 'tag' in sample['id_nn']:
+            noise_tag_one_hot = noise_input_one_hot[song_size : song_size+tag_size]
 
-        sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
-        sample['noise_song_one_hot'] = noise_song_one_hot
-        sample['noise_tag_one_hot'] = noise_tag_one_hot
+        if 'song' in sample['id_nn']:
+            sample['noise_song_one_hot'] = noise_song_one_hot
+        if 'tag' in sample['id_nn']:
+            sample['noise_tag_one_hot'] = noise_tag_one_hot
         sample['noise_input_song'] = noise_input_song
         sample['noise_input_tag'] = noise_input_tag
         sample['target_song'] = input_song
@@ -80,32 +83,40 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
 class add_meta(object):
     def __call__(self,sample):
         noise_input_song = sample['noise_input_song']
-        meta = np.zeros(len(entity_to_idx))
-        for song in noise_input_song:
-            if str(song) in song_to_entityidx:
-                for idx in song_to_entityidx[str(song)]:
-                    meta[idx] += 1
+        if 'song' in sample['id_nn']:
+            meta = np.zeros(len(entity_to_idx))
+            for song in noise_input_song:
+                if str(song) in song_to_entityidx:
+                    for idx in song_to_entityidx[str(song)]:
+                        meta[idx] += 1
         #sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , meta))
-        sample['meta_input_one_hot_title'] = sample['plylst_meta']
-        sample['meta_input_one_hot_title_tag'] = np.concatenate((sample['plylst_meta'], sample['noise_tag_one_hot']))
-        sample['meta_input_one_hot_song_meta_tag'] = np.concatenate((sample['noise_song_one_hot'], meta, sample['noise_tag_one_hot']))
-        sample['meta_input_one_hot_song_meta'] = np.concatenate((sample['noise_song_one_hot'], meta))
+        if 'title' in sample['id_nn']:
+            if 'tag' in sample['id_nn']:
+                sample['meta_input_one_hot_title_tag'] = np.concatenate((sample['plylst_meta'], sample['noise_tag_one_hot']))
+            else:
+                sample['meta_input_one_hot_title'] = sample['plylst_meta']
+        else:
+            if 'tag' in sample['id_nn']:
+                sample['meta_input_one_hot_song_meta_tag'] = np.concatenate((sample['noise_song_one_hot'], meta, sample['noise_tag_one_hot']))
+            else:
+                sample['meta_input_one_hot_song_meta'] = np.concatenate((sample['noise_song_one_hot'], meta))
         return sample
 
 class add_plylst_meta(object):
     def __call__(self,sample):
-        plylst_meta = np.zeros(len(letter_to_idx))
-        for plylst_title in sample['plylst_title']:
-            for l in plylst_title:
-                if l in letter_to_idx:
-                    plylst_meta[letter_to_idx[l]] += 1
-        sample['plylst_meta'] = plylst_meta
+        if "title" in sample['id_nn']:
+            plylst_meta = np.zeros(len(letter_to_idx))
+            for plylst_title in sample['plylst_title']:
+                for l in plylst_title:
+                    if l in letter_to_idx:
+                        plylst_meta[letter_to_idx[l]] += 1
+            sample['plylst_meta'] = plylst_meta
         return sample
 
 class PlaylistDataset(Dataset):
     """Playlist target dataset."""
 
-    def __init__(self, transform = Noise_p(0.5)):
+    def __init__(self, id_nn , transform = Noise_p(0.5)):
 
         with open(os.path.join(data_path, "train.json"), 'r', encoding='utf-8') as f1:
             self.training_set = json.load(f1)
@@ -116,7 +127,10 @@ class PlaylistDataset(Dataset):
             self.song_to_idx = json.load(f1)
         with open(os.path.join(data_path,"tag_to_idx.json"), 'r', encoding='utf-8') as f2:
             self.tag_to_idx = json.load(f2)
-        
+        self.id_nn = id_nn
+        if self.id_nn not in type_nn:
+            print("Error :: id_nn is not in typenn")
+            return None
         self.transform = transform
     def __len__(self):
         return len(self.training_set)
@@ -127,7 +141,6 @@ class PlaylistDataset(Dataset):
         plylst_title = self.training_set[idx]['plylst_title']
 
         input_one_hot = np.zeros(input_dim)
-
         input_song = []
         input_tag = []
         for song in songs:
@@ -142,8 +155,7 @@ class PlaylistDataset(Dataset):
         input_song = np.array(input_song)
         input_tag = np.array(input_tag)
         #playlist_vec: one hot vec of i'th playlist
-
-        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title}
+        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'id_nn' : self.id_nn}
 
         if self.transform:
             sample = self.transform(sample)
@@ -156,9 +168,10 @@ class ToTensor(object):
 
     def __call__(self, sample):
         ret = {}
-        for id_nn in type_nn:
-            ret['meta_input_one_hot_' + id_nn] = torch.from_numpy(sample['meta_input_one_hot_' + id_nn]).float().to(device)
+        ret['meta_input_one_hot_' + sample['id_nn']] = torch.from_numpy(sample['meta_input_one_hot_' + sample['id_nn']]).float().to(device)
         ret['target_one_hot'] = torch.from_numpy(sample['target_one_hot']).float().to(device)
-        ret['noise_song_one_hot'] = sample['noise_song_one_hot']
-        ret['noise_tag_one_hot'] = sample['noise_tag_one_hot']
+        if 'song' in sample['id_nn']:
+            ret['noise_song_one_hot'] = sample['noise_song_one_hot']
+        if 'tag' in sample['id_nn']:
+            ret['noise_tag_one_hot'] = sample['noise_tag_one_hot']
         return ret

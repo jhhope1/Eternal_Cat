@@ -12,8 +12,8 @@ import random
 from DataLoad_4_NN import PlaylistDataset
 import DataLoad_4_NN as DataLoad
 
-def splited_loader(validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, batch_size = 128):
-    transformed_dataset = PlaylistDataset(transform=transforms.Compose([
+def splited_loader(id_nn, validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, batch_size = 128):
+    transformed_dataset = PlaylistDataset(id_nn = id_nn, transform=transforms.Compose([
                                                 DataLoad.add_plylst_meta(),
                                                 DataLoad.Noise_p(0.5),
                                                 DataLoad.add_meta(),

@@ -8,11 +8,10 @@ import json
 import split_data_4_NN as split_data
 import os
 
-batch_size = 512
+batch_size = 256
 random_seed = 10
 validation_ratio = 0.01
 test_ratio = 0.01
-train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 input_dim = 101252
 output_dim = 57229
@@ -25,18 +24,23 @@ data_path = os.path.join(PARENT_PATH, 'data')
 
 epochs = 100
 log_interval = 100
-learning_rate = 1e-3            print('====> Epoch: {}, Net={}, Average loss: {:.4f}'.format(
-                epoch, id_nn, train_loss[id_nn] / len(train_loader)))
-            torch.save(model[id_nn].state_dict(), model_PATH[id_nn])
+learning_rate = 1e-3
 weight_decay = 0
 D_ = 300
 #layer_sizes = (input_dim,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim)
 dropout_p = 0.0
 
-type_nn = ['song_meta_tag', 'title', 'title_tag', 'song_meta']
+#train type of nn
+type_nn = ['song_meta_tag', 'title']#, 'title_tag', 'song_meta']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
 input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
 layer_sizes = {name: (input_dim[name],D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim) for name in type_nn}
+
+train_loader = {}
+valid_loader = {}
+test_loader = {}
+for id_nn in type_nn:
+    train_loader[id_nn], valid_loader[id_nn], test_loader[id_nn] = split_data.splited_loader(id_nn = id_nn, batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).to(device) for name in type_nn}
 optimizer = {name: optim.Adam(model[name].parameters(), lr=learning_rate, weight_decay=weight_decay) for name in type_nn}
@@ -53,84 +57,82 @@ def loss_function(recon_x, x):
     BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
     return BCE
 
-def train(epoch ,is_load = True):#Kakao AE
-    for id_nn in type_nn:
-        if is_load:
-            model[id_nn].load_state_dict(torch.load(model_PATH[id_nn]))
-    train_loss = {name: 0. for name in type_nn}
-    for id_nn in type_nn:
-        for idx, data in enumerate(train_loader):
-            model[id_nn].train()
-            optimizer[id_nn].zero_grad()
-
-            recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn].to(device)) #need to be modified
-            loss = loss_function(recon_batch, data['target_one_hot'].to(device)) #you too
-            loss.backward()
-            train_loss[id_nn] += loss.item()
-            optimizer[id_nn].step()
-
-            if aug_step > 0:
-                for _ in range(aug_step):
-                    noised_inputs = recon_batch.detach()
-                    if noise_p > 0.0:
-                        noised_inputs = dp(noised_inputs)
-                    meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot_' + id_nn].narrow(1,0,input_dim-output_dim)], dim = 1)
-                    optimizer[id_nn].zero_grad()
-                    recon_batch = model(meta_noised_inputs)
-                    loss = loss_function(recon_batch, noised_inputs.to(device))
-                    loss.backward()
-                    optimizer[id_nn].step()
-            
-            if idx % log_interval == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)], Net={}\tLoss: {:.6f}'.format(
-                    epoch, idx, len(train_loader),
-                    100. * idx/len(train_loader),
-                    id_nn,
-                    loss.item() / len(data))) 
-            ##
-        print('====> Epoch: {}, Net={}, Average loss: {:.4f}'.format(
-            epoch, id_nn, train_loss[id_nn] / len(train_loader)))
-        torch.save(model[id_nn].state_dict(), model_PATH[id_nn])
-
-def test_accuracy():
-    for id_nn in type_nn:
+def train(epoch ,id_nn, is_load = True):#Kakao AE
+    if is_load:
         model[id_nn].load_state_dict(torch.load(model_PATH[id_nn]))
-        model[id_nn].eval()
-        with torch.no_grad():
-            total_lostsong = 0
-            correct = 0
-            for data in test_loader:
-                noise_img = data['meta_input_one_hot_' + id_nn].to(device)
-                img = data['target_one_hot'].to(device)
-                output = model[id_nn](noise_img) #is this right?
-                _, indices = torch.topk(output, extract_num, dim = 1)
+    train_loss = 0
+    for idx, data in enumerate(train_loader[id_nn]):
+        model[id_nn].train()
+        optimizer[id_nn].zero_grad()
 
-                diff = img
-                if 'song' in id_nn:
-                    noise_input_extended = torch.zeros_like(img)
-                    colnum = data['noise_song_one_hot'].shape[1]
-                    noise_input_extended[:,:colnum] = data['noise_song_one_hot']
-                    diff -= noise_input_extended
+        recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn].to(device)) #need to be modified
+        loss = loss_function(recon_batch, data['target_one_hot'].to(device)) #you too
+        loss.backward()
+        train_loss += loss.item()
+        optimizer[id_nn].step()
 
-                if 'tag' in id_nn:
-                    noise_input_extended = torch.zeros_like(img)
-                    col_st = img.shape[1] - data['noise_tag_one_hot'].shape[1]
-                    noise_input_extended[:, col_st:] = data['noise_tag_one_hot']
-                    diff -= noise_input_extended
+        if aug_step > 0:
+            for _ in range(aug_step):
+                noised_inputs = recon_batch.detach()
+                if noise_p > 0.0:
+                    noised_inputs = dp(noised_inputs)
+                meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot_' + id_nn].narrow(1,0,input_dim-output_dim)], dim = 1)
+                optimizer[id_nn].zero_grad()
+                recon_batch = model(meta_noised_inputs)
+                loss = loss_function(recon_batch, noised_inputs.to(device))
+                loss.backward()
+                optimizer[id_nn].step()
+        
+        if idx % log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)], Net={}\tLoss: {:.6f}'.format(
+                epoch, idx, len(train_loader[id_nn]),
+                100. * idx/len(train_loader[id_nn]),
+                id_nn,
+                loss.item() / len(data))) 
+        ##
+    print('====> Epoch: {}, Net={}, Average loss: {:.4f}'.format(
+        epoch, id_nn, train_loss / len(train_loader[id_nn])))
+    torch.save(model[id_nn].state_dict(), model_PATH[id_nn])
 
-                total_lostsong += torch.sum(diff.view(-1))
-                one_hot = torch.zeros(indices.size(0), output_dim).to(device)
-                one_hot = one_hot.scatter(1, indices.cuda().data, 1)
+def test_accuracy(id_nn):
+    model[id_nn].load_state_dict(torch.load(model_PATH[id_nn]))
+    model[id_nn].eval()
+    with torch.no_grad():
+        total_lostsong = 0
+        correct = 0
+        for data in test_loader[id_nn]:
+            noise_img = data['meta_input_one_hot_' + id_nn].to(device)
+            img = data['target_one_hot'].to(device)
+            output = model[id_nn](noise_img) #is this right?
+            _, indices = torch.topk(output, extract_num, dim = 1)
 
-                one_hot_filter = one_hot * diff
-                correct += torch.sum(one_hot_filter.view(-1))
+            diff = img
+            if 'song' in id_nn:
+                noise_input_extended = torch.zeros_like(img)
+                colnum = data['noise_song_one_hot'].shape[1]
+                noise_input_extended[:,:colnum] = data['noise_song_one_hot']
+                diff -= noise_input_extended
 
-            accuracy = None
-            if total_lostsong > 0:
-                accuracy = correct / total_lostsong * 100.
-            print('accuracy: {}(%). Net={}'.format(accuracy, id_nn))
+            if 'tag' in id_nn:
+                noise_input_extended = torch.zeros_like(img)
+                col_st = img.shape[1] - data['noise_tag_one_hot'].shape[1]
+                noise_input_extended[:, col_st:] = data['noise_tag_one_hot']
+                diff -= noise_input_extended
+
+            total_lostsong += torch.sum(diff.view(-1))
+            one_hot = torch.zeros(indices.size(0), output_dim).to(device)
+            one_hot = one_hot.scatter(1, indices.cuda().data, 1)
+
+            one_hot_filter = one_hot * diff
+            correct += torch.sum(one_hot_filter.view(-1))
+
+        accuracy = None
+        if total_lostsong > 0:
+            accuracy = correct / total_lostsong * 100.
+        print('accuracy: {}(%). Net={}'.format(accuracy, id_nn))
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
-        test_accuracy()
+        for id_nn in type_nn:
+            train(epoch = epoch, id_nn = id_nn , is_load=False)
+            test_accuracy(id_nn)
