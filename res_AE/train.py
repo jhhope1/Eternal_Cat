@@ -25,8 +25,8 @@ model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
 learning_rate = 1e-3
-weight_decay = 1e-10
-layer_sizes = (input_dim,300,300,300,300,300,300,300,300,300,300,300,300,300,output_dim)
+weight_decay = 0
+layer_sizes = (input_dim,400,400,400,400,400,400,400,400,400,400,400,400,400,output_dim)
 dropout_p = 0.0
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
