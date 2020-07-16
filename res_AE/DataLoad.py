@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import json
 import random
-# 경고 메시지 무시하기
+# 경고 메시�? 무시?���?
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -45,7 +45,7 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
         noise_input_tag = np.random.choice(input_tag, replace=False,
                            size=int(input_tag.size * (1-self.noise_p)))
 
-        noise_input_one_hot = np.zeros_like(input_one_hot)
+        noise_input_one_hot = torch.zeros_like(input_one_hot)
         
         if sample['include_plylst']:
             if random.random()>tag_missing_ply_true:
@@ -60,8 +60,7 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
                 for tag in noise_input_tag:
                     if tag_to_idx.get(tag) != None:
                         noise_input_one_hot[tag_to_idx[tag]] = 1 
-
-        sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
+        sample['input_one_hot'] = torch.cat((noise_input_one_hot,sample['plylst_meta']))
         sample['noise_input_song'] = noise_input_song
         sample['noise_input_tag'] = noise_input_tag
         sample['target_song'] = input_song
@@ -80,16 +79,18 @@ class Noise_uniform(object):
 class add_meta(object):
     def __call__(self,sample):
         noise_input_song = sample['noise_input_song']
-        meta = np.zeros(len(entity_to_idx))
+        meta = torch.zeros(len(entity_to_idx))
         for song in noise_input_song:
             if str(song) in song_to_entityidx:
                 for idx in song_to_entityidx[str(song)]:
                     meta[idx] += 1
-        sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , meta))
+        return {'meta_input_one_hot':torch.cat((sample['input_one_hot'] , meta)), 'target_one_hot':sample['target_one_hot']}
+        sample['meta_input_one_hot'] = torch.cat((sample['input_one_hot'] , meta))
         return sample
+
 class add_plylst_meta(object):
     def __call__(self,sample):
-        plylst_meta = np.zeros(len(letter_to_idx))
+        plylst_meta = torch.zeros(len(letter_to_idx))
         if random.random()>plylst_missing:
             for plylst_title in sample['plylst_title']:
                 for l in plylst_title:
@@ -123,7 +124,7 @@ class PlaylistDataset(Dataset):
         songs, tags = self.training_set[idx]['songs'], self.training_set[idx]['tags']
         plylst_title = self.training_set[idx]['plylst_title']
 
-        input_one_hot = np.zeros(input_dim)
+        input_one_hot = torch.zeros(input_dim)
 
         input_song = []
         input_tag = []
@@ -140,18 +141,9 @@ class PlaylistDataset(Dataset):
         input_tag = np.array(input_tag)
         #playlist_vec: one hot vec of i'th playlist
 
-        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'include_plylst' : False}
+        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : torch.tensor(input_one_hot), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'include_plylst' : False}
 
         if self.transform:
             sample = self.transform(sample)
 
         return sample
-
-
-class ToTensor(object):
-    """numpy array를 tensor(torch)로 변환 시켜줍니다."""
-
-    def __call__(self, sample):
-        meta_input_one_hot = torch.from_numpy(sample['meta_input_one_hot']).type(torch.FloatTensor).to(device)
-        target_one_hot = torch.from_numpy(sample['target_one_hot']).type(torch.FloatTensor).to(device)
-        return {'meta_input_one_hot':meta_input_one_hot,'target_one_hot':target_one_hot}

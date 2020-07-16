@@ -18,7 +18,7 @@ input_dim = 101252
 output_dim = 57229
 noise_p = 0.5
 extract_num = 100
-aug_step = 0 #얼마가 최적일까?
+aug_step = 0 #blobfusad
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
@@ -31,7 +31,7 @@ dropout_p = 0.0
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=True).to(device)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight 추가
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight 추�??
 
 dp = nn.Dropout(p=noise_p)
 
@@ -100,5 +100,5 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
+        train(epoch = epoch, is_load=False)
         test_accuracy()

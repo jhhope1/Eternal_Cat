@@ -16,8 +16,7 @@ def splited_loader(validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, b
     transformed_dataset = PlaylistDataset(transform=transforms.Compose([
                                                 DataLoad.add_plylst_meta(),
                                                 DataLoad.Noise_p(0.5),
-                                                DataLoad.add_meta(),
-                                                DataLoad.ToTensor()
+                                                DataLoad.add_meta()
                                             ]))
 
     num_train = len(transformed_dataset)
