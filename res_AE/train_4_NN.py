@@ -43,8 +43,8 @@ test_loader = {}
 for id_nn in type_nn:
     train_loader[id_nn], valid_loader[id_nn], test_loader[id_nn] = split_data.splited_loader(id_nn = id_nn, batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
-model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).cuda() for name in type_nn}
-model = {name: nn.DataParallel(model[name].cuda()) for name in type_nn}
+model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).to(device) for name in type_nn}
+#model = {name: nn.DataParallel(model[name].to(device)) for name in type_nn}
 optimizer = {name: optim.Adam(model[name].parameters(), lr=learning_rate, weight_decay=weight_decay) for name in type_nn}
 
 dp = nn.Dropout(p=noise_p)
@@ -62,8 +62,8 @@ def train(epoch, id_nn, is_load = True):#Kakao AE
         model[id_nn].train()
         optimizer[id_nn].zero_grad()
 
-        recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn].cuda()) #need to be modified
-        loss = loss_function(recon_batch, data['target_one_hot'].cuda()) #you too
+        recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn].to(device)) #need to be modified
+        loss = loss_function(recon_batch, data['target_one_hot'].to(device)) #you too
         loss.backward()
         train_loss += loss.item()
         optimizer[id_nn].step()
@@ -75,8 +75,8 @@ def train(epoch, id_nn, is_load = True):#Kakao AE
                     noised_inputs = dp(noised_inputs)
                 meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot_' + id_nn].narrow(1,0,input_dim-output_dim)], dim = 1)
                 optimizer[id_nn].zero_grad()
-                recon_batch = model(meta_noised_inputs.cuda())
-                loss = loss_function(recon_batch, noised_inputs.cuda())
+                recon_batch = model(meta_noised_inputs.to(device))
+                loss = loss_function(recon_batch, noised_inputs.to(device))
                 loss.backward()
                 optimizer[id_nn].step()
         
@@ -104,7 +104,7 @@ def test_accuracy(id_nn):
         for data in test_loader[id_nn]:
             noise_img = data['meta_input_one_hot_' + id_nn]
             img = data['target_one_hot']
-            output = model[id_nn](noise_img.cuda()) #is this right?
+            output = model[id_nn](noise_img.to(device)) #is this right?
             _, indices_tag = torch.topk(output.narrow(1,0,song_size), extract_song, dim = 1)
             _, indices_song = torch.topk(output.narrow(1,song_size,output_dim-song_size), extract_tag, dim = 1) 
             indices_song += torch.tensor(song_size).long()
@@ -126,8 +126,8 @@ def test_accuracy(id_nn):
             total_lostsong += torch.sum(diff.narrow(1,0,song_size).reshape(-1))
             total_losttag += torch.sum(diff.narrow(1,song_size,output_dim-song_size).reshape(-1))
 
-            one_hot = torch.zeros(indices_song.size(0), output_dim).cuda()
-            one_hot = one_hot.scatter(1, indices.cuda().data, 1)
+            one_hot = torch.zeros(indices_song.size(0), output_dim).to(device)
+            one_hot = one_hot.scatter(1, indices.to(device).data, 1)
 
             one_hot_filter = one_hot * diff
             correct_song += torch.sum(one_hot_filter.narrow(1,0,song_size).reshape(-1))
