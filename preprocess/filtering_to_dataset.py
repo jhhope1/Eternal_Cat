@@ -48,7 +48,7 @@ with open(DATA + "train.json", "r", encoding="utf-8") as f1:
             idx_to_item.append(tag)
             vector_size += 1
     print(vector_size, " is size of this vector")
-    with open(os.path.join(data_path, "song_meta.json"), "r", encoding = 'utf-8') as f2:
+    with open(DATA + "song_meta.json", "r", encoding = 'utf-8') as f2:
         songmap = json.load(f2)
         for song, idx in song_to_idx.items():
             for genre in songmap[song]["song_gn_gnr_basket"]:

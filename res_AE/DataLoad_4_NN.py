@@ -1,5 +1,4 @@
 from __future__ import print_function, division
-import os
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -11,8 +10,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 input_dim = 57229
-PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
+DATA = "../data/"
 type_nn = ['title', 'title_tag', 'song_meta_tag', 'song_meta']
 
 song_to_idx = {}
@@ -22,22 +20,22 @@ tag_size = 0
 entity_size = 0
 l_num = 0
 
-with open(os.path.join(data_path, "song_to_idx.json"), 'r', encoding='utf-8') as f1:
+with open(DATA + "song_to_idx.json", 'r', encoding='utf-8') as f1:
     song_to_idx = json.load(f1)
     song_size = len(song_to_idx)
 
-with open(os.path.join(data_path,"tag_to_idx.json"), 'r', encoding='utf-8') as f2:
+with open(DATA + "tag_to_idx.json", 'r', encoding='utf-8') as f2:
     tag_to_idx = json.load(f2)
     tag_size = len(tag_to_idx)
 
-with open(os.path.join(data_path,"res_song_to_entityidx.json"), 'r', encoding='utf-8') as f3:
+with open(DATA + "res_song_to_entityidx.json", 'r', encoding='utf-8') as f3:
     song_to_entityidx = json.load(f3)
 
-with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8') as f4:
+with open(DATA + "res_entity_to_idx.json", 'r', encoding='utf-8') as f4:
     entity_to_idx = json.load(f4)
     entity_size = len(entity_to_idx)
 
-with open(os.path.join(data_path,"res_letter_to_idx.json"), 'r', encoding='utf-8') as f5:
+with open(DATA + "res_letter_to_idx.json", 'r', encoding='utf-8') as f5:
     letter_to_idx = json.load(f5)
     l_num = len(letter_to_idx)
 
@@ -110,14 +108,14 @@ class PlaylistDataset(Dataset):
 
     def __init__(self, id_nn , transform = Noise_p(0.5)):
 
-        with open(os.path.join(data_path, "train.json"), 'r', encoding='utf-8') as f1:
+        with open(DATA + "train.json", 'r', encoding='utf-8') as f1:
             self.training_set = json.load(f1)
 
         self.song_to_idx = {}
         self.tag_to_idx = {}
-        with open(os.path.join(data_path, "song_to_idx.json"), 'r', encoding='utf-8') as f1:
+        with open(DATA + "song_to_idx.json", 'r', encoding='utf-8') as f1:
             self.song_to_idx = json.load(f1)
-        with open(os.path.join(data_path,"tag_to_idx.json"), 'r', encoding='utf-8') as f2:
+        with open(DATA + "tag_to_idx.json", 'r', encoding='utf-8') as f2:
             self.tag_to_idx = json.load(f2)
         self.id_nn = id_nn
         if self.id_nn not in type_nn:
