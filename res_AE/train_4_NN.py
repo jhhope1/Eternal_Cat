@@ -26,7 +26,7 @@ data_path = os.path.join(PARENT_PATH, 'data')
 
 epochs = 100
 log_interval = 100
-learning_rate = 5e-4
+learning_rate = 1e-3
 weight_decay = 0
 D_ = 300
 dropout_p = 0.0
@@ -44,7 +44,7 @@ for id_nn in type_nn:
     train_loader[id_nn], valid_loader[id_nn], test_loader[id_nn] = split_data.splited_loader(id_nn = id_nn, batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).cuda() for name in type_nn}
-#model = {name: nn.DataParallel(model[name].cuda()] for name in type_nn}
+model = {name: nn.DataParallel(model[name].cuda()) for name in type_nn}
 optimizer = {name: optim.Adam(model[name].parameters(), lr=learning_rate, weight_decay=weight_decay) for name in type_nn}
 
 dp = nn.Dropout(p=noise_p)
