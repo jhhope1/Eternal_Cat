@@ -8,7 +8,7 @@ import json
 import split_data_4_NN as split_data
 import os
 
-batch_size = 256
+batch_size = 128
 random_seed = 10
 validation_ratio = 0.01
 test_ratio = 0.01
@@ -29,13 +29,13 @@ log_interval = 100
 learning_rate = 1e-3
 weight_decay = 0
 D_ = 300
-dropout_p = 0.0
+dropout_p = 0.8
 
 #train type of nn
-type_nn = ['title_tag', 'song_meta'] #['song_meta_tag', 'title']
+type_nn = ['song_meta_tag'] #['title_tag', 'song_meta', 'title']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
 input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
-layer_sizes = {name: (input_dim[name],D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim) for name in type_nn}
+layer_sizes = {name: (input_dim[name],500,1000,500,output_dim) for name in type_nn}
 
 train_loader = {}
 valid_loader = {}
@@ -43,7 +43,7 @@ test_loader = {}
 for id_nn in type_nn:
     train_loader[id_nn], valid_loader[id_nn], test_loader[id_nn] = split_data.splited_loader(id_nn = id_nn, batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
-model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).to(device) for name in type_nn}
+model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=False).to(device) for name in type_nn}
 #model = {name: nn.DataParallel(model[name].to(device)) for name in type_nn}
 optimizer = {name: optim.Adam(model[name].parameters(), lr=learning_rate, weight_decay=weight_decay) for name in type_nn}
 
