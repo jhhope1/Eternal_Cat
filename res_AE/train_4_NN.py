@@ -15,6 +15,7 @@ test_ratio = 0.01
 
 input_dim = 101252
 output_dim = 57229
+song_size = 53921
 noise_p = 0.5
 extract_num = 100
 aug_step = 0 #blobfusad
@@ -31,7 +32,7 @@ D_ = 300
 dropout_p = 0.0
 
 #train type of nn
-type_nn = ['song_meta_tag']#, 'title', 'title_tag', 'song_meta']
+type_nn = ['song_meta_tag', 'title']#, 'title_tag', 'song_meta']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
 input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
 layer_sizes = {name: (input_dim[name],D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim) for name in type_nn}
@@ -45,16 +46,11 @@ for id_nn in type_nn:
 model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).to(device) for name in type_nn}
 optimizer = {name: optim.Adam(model[name].parameters(), lr=learning_rate, weight_decay=weight_decay) for name in type_nn}
 
-
-
-
-
-
 dp = nn.Dropout(p=noise_p)
 
-
 def loss_function(recon_x, x):
-    BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
+    BCE = F.binary_cross_entropy(recon_x.narrow(1,0,song_size), x.narrow(1,0,song_size), reduction='mean')
+    #BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
     return BCE
 
 def train(epoch ,id_nn, is_load = True):#Kakao AE
@@ -98,8 +94,12 @@ def test_accuracy(id_nn):
     model[id_nn].load_state_dict(torch.load(model_PATH[id_nn]))
     model[id_nn].eval()
     with torch.no_grad():
+        total_lost = 0
         total_lostsong = 0
+        total_losttag = 0
         correct = 0
+        correct_song = 0
+        correct_tag = 0
         for data in test_loader[id_nn]:
             noise_img = data['meta_input_one_hot_' + id_nn]
             img = data['target_one_hot']
@@ -119,17 +119,24 @@ def test_accuracy(id_nn):
                 noise_input_extended[:, col_st:] = data['noise_tag_one_hot']
                 diff -= noise_input_extended
 
-            total_lostsong += torch.sum(diff.view(-1))
+            total_lost += torch.sum(diff.reshape(-1))
+            total_lostsong += torch.sum(diff.narrow(1,0,song_size).reshape(-1))
+            total_losttag += torch.sum(diff.narrow(1,song_size,output_dim-song_size).reshape(-1))
+
             one_hot = torch.zeros(indices.size(0), output_dim).to(device)
             one_hot = one_hot.scatter(1, indices.cuda().data, 1)
 
             one_hot_filter = one_hot * diff
-            correct += torch.sum(one_hot_filter.view(-1))
+            correct_song += torch.sum(one_hot_filter.narrow(1,0,song_size).reshape(-1))
+            correct_tag += torch.sum(one_hot_filter.narrow(1,song_size,output_dim-song_size).reshape(-1))
+            correct += torch.sum(one_hot_filter.reshape(-1))
 
         accuracy = None
         if total_lostsong > 0:
-            accuracy = correct / total_lostsong * 100.
-        print('accuracy: {}(%). Net={}'.format(accuracy, id_nn))
+            accuracy = correct / total_lost * 100.
+            tag_accuracy = correct_tag / total_losttag * 100.
+            song_accuracy = correct_song / total_lostsong * 100.
+        print('::ACCURACY:: of Net={} \naccuracy: {}(%)\nsong_accuracy: {}(%)\ntag_accuracy: {}(%)'.format(id_nn, accuracy, song_accuracy, tag_accuracy))
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
