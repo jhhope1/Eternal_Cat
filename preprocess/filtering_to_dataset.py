@@ -12,9 +12,11 @@ song_genre_map = {}
 genre_to_idx = {}
 dim = 57229
 
-DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
 
-with open(DATA+"train.json", "r", encoding="utf-8") as f1:
+PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
+data_path = os.path.join(PARENT_PATH, 'data')
+
+with open(os.path.join(data_path, "train.json"), "r", encoding="utf-8") as f1:
     data = json.load(f1)
     vector_size = 0
     song_to_idx = {}
@@ -48,7 +50,7 @@ with open(DATA+"train.json", "r", encoding="utf-8") as f1:
             idx_to_item.append(tag)
             vector_size += 1
     print(vector_size, " is size of this vector")
-    with open(DATA+"song_meta.json", "r", encoding = 'utf-8') as f2:
+    with open(os.path.join(data_path, "song_meta.json"), "r", encoding = 'utf-8') as f2:
         songmap = json.load(f2)
         for song, idx in song_to_idx.items():
             for genre in songmap[song]["song_gn_gnr_basket"]:
