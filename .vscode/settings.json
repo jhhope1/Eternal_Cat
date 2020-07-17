@@ -2,7 +2,11 @@
     "files.associations": {
         "vector": "cpp"
     },
+<<<<<<< HEAD
+    "python.pythonPath": "C:\\Users\\clone\\Anaconda3\\envs\\pytorch\\python.exe"
+=======
     "python.linting.pylintEnabled": true,
     "python.linting.banditEnabled": false,
     "python.linting.enabled": true
+>>>>>>> 0decd80b9a2c518ee687c47c6ae96d2695ce81d3
 }
