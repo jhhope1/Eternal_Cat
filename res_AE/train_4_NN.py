@@ -17,7 +17,8 @@ input_dim = 101252
 output_dim = 57229
 song_size = 53921
 noise_p = 0.5
-extract_num = 100
+extract_song = 100
+extract_tag = 10
 aug_step = 0 #blobfusad
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
@@ -25,14 +26,13 @@ data_path = os.path.join(PARENT_PATH, 'data')
 
 epochs = 100
 log_interval = 100
-learning_rate = 1e-3
+learning_rate = 5e-4
 weight_decay = 0
 D_ = 300
-#layer_sizes = (input_dim,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim)
 dropout_p = 0.0
 
 #train type of nn
-type_nn = ['song_meta_tag', 'title']#, 'title_tag', 'song_meta']
+type_nn = ['title_tag', 'song_meta'] #['song_meta_tag', 'title']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
 input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
 layer_sizes = {name: (input_dim[name],D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim) for name in type_nn}
@@ -43,7 +43,8 @@ test_loader = {}
 for id_nn in type_nn:
     train_loader[id_nn], valid_loader[id_nn], test_loader[id_nn] = split_data.splited_loader(id_nn = id_nn, batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
-model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).to(device) for name in type_nn}
+model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], dp_drop_prob = dropout_p, is_res=True).cuda() for name in type_nn}
+#model = {name: nn.DataParallel(model[name].cuda()] for name in type_nn}
 optimizer = {name: optim.Adam(model[name].parameters(), lr=learning_rate, weight_decay=weight_decay) for name in type_nn}
 
 dp = nn.Dropout(p=noise_p)
@@ -53,7 +54,7 @@ def loss_function(recon_x, x):
     #BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
     return BCE
 
-def train(epoch ,id_nn, is_load = True):#Kakao AE
+def train(epoch, id_nn, is_load = True):#Kakao AE
     if is_load:
         model[id_nn].load_state_dict(torch.load(model_PATH[id_nn]))
     train_loss = 0
@@ -61,8 +62,8 @@ def train(epoch ,id_nn, is_load = True):#Kakao AE
         model[id_nn].train()
         optimizer[id_nn].zero_grad()
 
-        recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn]) #need to be modified
-        loss = loss_function(recon_batch, data['target_one_hot']) #you too
+        recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn].cuda()) #need to be modified
+        loss = loss_function(recon_batch, data['target_one_hot'].cuda()) #you too
         loss.backward()
         train_loss += loss.item()
         optimizer[id_nn].step()
@@ -74,8 +75,8 @@ def train(epoch ,id_nn, is_load = True):#Kakao AE
                     noised_inputs = dp(noised_inputs)
                 meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot_' + id_nn].narrow(1,0,input_dim-output_dim)], dim = 1)
                 optimizer[id_nn].zero_grad()
-                recon_batch = model(meta_noised_inputs)
-                loss = loss_function(recon_batch, noised_inputs.to(device))
+                recon_batch = model(meta_noised_inputs.cuda())
+                loss = loss_function(recon_batch, noised_inputs.cuda())
                 loss.backward()
                 optimizer[id_nn].step()
         
@@ -103,9 +104,11 @@ def test_accuracy(id_nn):
         for data in test_loader[id_nn]:
             noise_img = data['meta_input_one_hot_' + id_nn]
             img = data['target_one_hot']
-            output = model[id_nn](noise_img) #is this right?
-            _, indices = torch.topk(output, extract_num, dim = 1)
-
+            output = model[id_nn](noise_img.cuda()) #is this right?
+            _, indices_tag = torch.topk(output.narrow(1,0,song_size), extract_song, dim = 1)
+            _, indices_song = torch.topk(output.narrow(1,song_size,output_dim-song_size), extract_tag, dim = 1) 
+            indices_song += torch.tensor(song_size).long()
+            indices = torch.cat((indices_song, indices_tag) , dim = 1)
             diff = img
             if 'song' in id_nn:
                 noise_input_extended = torch.zeros_like(img)
@@ -123,7 +126,7 @@ def test_accuracy(id_nn):
             total_lostsong += torch.sum(diff.narrow(1,0,song_size).reshape(-1))
             total_losttag += torch.sum(diff.narrow(1,song_size,output_dim-song_size).reshape(-1))
 
-            one_hot = torch.zeros(indices.size(0), output_dim).to(device)
+            one_hot = torch.zeros(indices_song.size(0), output_dim).cuda()
             one_hot = one_hot.scatter(1, indices.cuda().data, 1)
 
             one_hot_filter = one_hot * diff

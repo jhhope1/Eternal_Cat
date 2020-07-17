@@ -14,7 +14,7 @@ input_dim = 57229
 tag_missing_ply_false = 0.5 #1745/(2628+1745)
 tag_missing_ply_true = 0.3 #1745/(2628+1745)
 plylst_missing = 0.81
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 
@@ -152,6 +152,6 @@ class ToTensor(object):
     """numpy array를 tensor(torch)로 변환 시켜줍니다."""
 
     def __call__(self, sample):
-        meta_input_one_hot = torch.from_numpy(sample['meta_input_one_hot']).type(torch.FloatTensor).to(device)
-        target_one_hot = torch.from_numpy(sample['target_one_hot']).type(torch.FloatTensor).to(device)
+        meta_input_one_hot = torch.from_numpy(sample['meta_input_one_hot']).type(torch.FloatTensor)
+        target_one_hot = torch.from_numpy(sample['target_one_hot']).type(torch.FloatTensor)
         return {'meta_input_one_hot':meta_input_one_hot,'target_one_hot':target_one_hot}
