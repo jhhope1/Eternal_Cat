@@ -6,7 +6,6 @@ from torch.nn import functional as F
 import numpy as np
 import json
 import split_data
-import os
 
 batch_size = 256
 random_seed = 10

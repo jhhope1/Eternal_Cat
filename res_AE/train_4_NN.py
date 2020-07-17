@@ -6,7 +6,6 @@ from torch.nn import functional as F
 import numpy as np
 import json
 import split_data_4_NN as split_data
-import os
 
 batch_size = 256
 random_seed = 10
@@ -21,8 +20,7 @@ extract_song = 100
 extract_tag = 10
 aug_step = 0 #blobfusad
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
+DATA = "../data/"
 
 epochs = 100
 log_interval = 100
@@ -33,7 +31,7 @@ dropout_p = 0.0
 
 #train type of nn
 type_nn = ['title_tag', 'song_meta'] #['song_meta_tag', 'title']
-model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
+model_PATH = {name: DATA+ 'res_AE_' + name + '_weight.pth' for name in type_nn}
 input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
 layer_sizes = {name: (input_dim[name],D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim) for name in type_nn}
 

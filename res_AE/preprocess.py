@@ -1,12 +1,9 @@
 import json
-import os
 
 taking_song = set()
 
-DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
-WDATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
+DATA = "../data/"
 
-#바꿀 필요 있을듯? 많이 나온 태그 같은걸로?
 with open(DATA+"song_to_idx.json", 'r',encoding='utf-8') as f1:
     data = json.load(f1)
     for song, idx in data.items():
@@ -82,10 +79,10 @@ letter_to_idx = {}
 for i in range(l_num):
     letter_to_idx[sorted_l[i][0]] = i
 
-with open(WDATA + "res_song_to_entityidx.json", 'w') as f2:
+with open(DATA + "res_song_to_entityidx.json", 'w') as f2:
     json.dump(song_to_entityidx_map,f2)
 
-with open(WDATA + "res_entity_to_idx.json", 'w') as f3:
+with open(DATA + "res_entity_to_idx.json", 'w') as f3:
     json.dump(entity_to_idx,f3)
 
 with open(DATA + "res_letter_to_idx.json", 'w', encoding='utf-8') as f3:
