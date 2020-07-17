@@ -29,13 +29,13 @@ log_interval = 100
 learning_rate = 1e-3
 weight_decay = 0
 D_ = 300
-dropout_p = 0.8
+dropout_p = 0.0
 
 #train type of nn
-type_nn = ['song_meta_tag'] #['title_tag', 'song_meta', 'title']
+type_nn = ['title_tag', 'song_meta']#,'song_meta_tag' 'title']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
 input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
-layer_sizes = {name: (input_dim[name],500,1000,500,output_dim) for name in type_nn}
+layer_sizes = {name: (input_dim[name],D_,D_,D_,output_dim) for name in type_nn}
 
 train_loader = {}
 valid_loader = {}
