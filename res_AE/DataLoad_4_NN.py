@@ -11,7 +11,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 input_dim = 57229
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 type_nn = ['title', 'title_tag', 'song_meta_tag', 'song_meta']
@@ -161,8 +160,8 @@ class ToTensor(object):
 
     def __call__(self, sample):
         ret = {}
-        ret['meta_input_one_hot_' + sample['id_nn']] = torch.from_numpy(sample['meta_input_one_hot_' + sample['id_nn']]).float().to(device)
-        ret['target_one_hot'] = torch.from_numpy(sample['target_one_hot']).float().to(device)
+        ret['meta_input_one_hot_' + sample['id_nn']] = torch.from_numpy(sample['meta_input_one_hot_' + sample['id_nn']]).float()
+        ret['target_one_hot'] = torch.from_numpy(sample['target_one_hot']).float()
         if 'song' in sample['id_nn']:
             ret['noise_song_one_hot'] = sample['noise_song_one_hot']
         if 'tag' in sample['id_nn']:

@@ -19,7 +19,6 @@ noise_p = 0.5
 extract_song = 100
 extract_tag = 10
 aug_step = 0 #blobfusad
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DATA = "../data/"
 
 epochs = 100
