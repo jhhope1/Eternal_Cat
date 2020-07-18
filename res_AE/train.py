@@ -14,7 +14,7 @@ validation_ratio = 0.01
 test_ratio = 0.01
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
-input_dim = 101252
+input_dim = 105729
 output_dim = 61706
 noise_p = 0.5
 extract_num = 100
@@ -24,31 +24,37 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 1e-4
+learning_rate = 1e-3
+D_ = 500
+
 weight_decay = 0
-layer_sizes = (input_dim,400,400,400,400,400,400,400,400,400,400,400,400,400,output_dim)
-dropout_p = 0.0
+layer_sizes = (input_dim,D_,D_,D_,output_dim)
+dropout_p = 0.3
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=True).to(device)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight 추�??
-
+model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=False).to(device)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
 dp = nn.Dropout(p=noise_p)
 
-
+pos_weight = torch.tensor([-1.]).to(device)
+neg_weight = torch.tensor([-0.01]).to(device)
+def custom_loss_function(output, target):
+    output = torch.clamp(output,min=1e-8,max=1-1e-8)
+    loss =  pos_weight * (target * torch.log(output)) + neg_weight* ((1 - target) * torch.log(1 - output))
+    return torch.mean(loss)
 def loss_function(recon_x, x):
     BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
     return BCE
 
 def train(epoch, is_load = True):#Kakao AE
-    if is_load:
+    if is_load and epoch == 1:
         model.load_state_dict(torch.load(model_PATH))
     model.train()
     train_loss = 0
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
-        recon_batch = model(data['meta_input_one_hot'])
-        loss = loss_function(recon_batch, data['target_one_hot'])
+        recon_batch = model(data['meta_input_one_hot'].to(device))
+        loss = custom_loss_function(recon_batch, data['target_one_hot'].to(device))
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -61,10 +67,13 @@ def train(epoch, is_load = True):#Kakao AE
                     noised_inputs = dp(noised_inputs)
                 meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot'].narrow(1,0,input_dim-output_dim)], dim = 1)
                 optimizer.zero_grad()
-                recon_batch = model(meta_noised_inputs)
+                recon_batch = model(meta_noised_inputs.to(device))
                 loss = loss_function(recon_batch, noised_inputs)
                 loss.backward()
                 optimizer.step()
+        if torch.isnan(loss):
+            print("loss is nan!")
+            return None
 
         if idx % log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -83,8 +92,8 @@ def test_accuracy():
     total_lostsong = 0
     correct = 0
     for data in test_loader:
-        noise_img = data['meta_input_one_hot']
-        img = data['target_one_hot']
+        noise_img = data['meta_input_one_hot'].to(device)
+        img = data['target_one_hot'].to(device)
         output = model(noise_img)
         _, indices = torch.topk(output, extract_num, dim = 1)
 
@@ -100,5 +109,5 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
+        train(epoch = epoch, is_load=False)
         test_accuracy()

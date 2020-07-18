@@ -8,7 +8,7 @@ import json
 import split_data_4_NN_titletag as split_data
 import os
 
-batch_size = 512
+batch_size = 256
 random_seed = 10
 validation_ratio = 0.01
 test_ratio = 0.01
@@ -26,10 +26,10 @@ data_path = os.path.join(PARENT_PATH, 'data')
 
 epochs = 1000
 log_interval = 100
-learning_rate = 1e-4
+learning_rate = 1e-3
 weight_decay = 0
 D_ = 300
-dropout_p = 0.
+dropout_p = 0.0
 
 #train type of nn
 type_nn = ['song_meta']#,'title','title_tag' , ['song_meta_tag']
@@ -49,9 +49,16 @@ optimizer = {name: optim.Adam(model[name].parameters(), lr=learning_rate, weight
 
 dp = nn.Dropout(p=noise_p)
 
+pos_weight = torch.Tensor([-10.]).to(device)
+neg_weight = torch.Tensor([-1.]).to(device)
+def custom_loss_function(output, target):
+    output = torch.clamp(output,min=1e-8,max=1-1e-8)  
+    loss =  pos_weight * (target * torch.log(output)) + neg_weight* ((1 - target) * torch.log(1 - output))
+    return torch.mean(loss)
+
 def loss_function(recon_x, x):
-    BCE = F.binary_cross_entropy(recon_x.narrow(1,0,song_size), x.narrow(1,0,song_size), reduction='mean')
-    #BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
+    #BCE = F.binary_cross_entropy(recon_x.narrow(1,0,song_size), x.narrow(1,0,song_size), reduction='mean')
+    BCE = F.binary_cross_entropy(recon_x, x, reduction='mean')
     return BCE
 
 def train(epoch, id_nn, is_load = True):#Kakao AE
@@ -63,7 +70,7 @@ def train(epoch, id_nn, is_load = True):#Kakao AE
         optimizer[id_nn].zero_grad()
 
         recon_batch = model[id_nn](data['meta_input_one_hot_' + id_nn].to(device)) #need to be modified
-        loss = loss_function(recon_batch, data['target_one_hot'].to(device)) #you too
+        loss = custom_loss_function(recon_batch, data['target_one_hot'].to(device)) #you too
         loss.backward()
         train_loss += loss.item()
         optimizer[id_nn].step()
@@ -144,5 +151,5 @@ def test_accuracy(id_nn):
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
         for id_nn in type_nn:
-            train(epoch = epoch, id_nn = id_nn , is_load=True)
+            train(epoch = epoch, id_nn = id_nn , is_load=False)
             test_accuracy(id_nn)

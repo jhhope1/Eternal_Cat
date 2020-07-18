@@ -10,7 +10,7 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
-input_dim = 57229
+input_dim = 61706
 tag_missing_ply_false = 0.5 #1745/(2628+1745)
 tag_missing_ply_true = 0.3 #1745/(2628+1745)
 plylst_missing = 0.81
