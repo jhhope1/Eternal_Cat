@@ -24,7 +24,7 @@ type_nn = ['title', 'title_tag', 'song_meta_tag', 'song_meta']
 
 
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
-input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
+input_dim = {'title': 7785, 'title_tag': 7785, 'song_meta_tag': 104729, 'song_meta': 96944}
 
 with open(os.path.join(data_path, "song_to_idx.json"), 'r', encoding='utf-8') as f1:
     song_to_idx = json.load(f1)
@@ -50,9 +50,8 @@ with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8
     entity_size = len(entity_to_idx)
 
 
-with open(os.path.join(data_path,"res_letter_to_idx.json"), 'r', encoding='utf-8') as f5:
-    letter_to_idx = json.load(f5)
-    l_num = len(letter_to_idx)
+with open(os.path.join(data_path,"tag_occur.json"), 'r', encoding='utf-8') as f5:
+    title_to_tag = json.load(f5)
 
 date_mask = torch.zeros(output_dim).to(device)
 with open(os.path.join(data_path,'song_to_newdt.json'), 'r', encoding='utf-8') as f6:
@@ -60,7 +59,6 @@ with open(os.path.join(data_path,'song_to_newdt.json'), 'r', encoding='utf-8') a
     for song in song_to_idx_keyset:
         date_mask[song_to_idx[song]] = song_to_newdt[song]
 
-letter_to_idx_keyset = set(letter_to_idx.keys())
 song_to_entityidx_key_set = set(song_to_entityidx.keys())
 
 import model_inference_4_NN as mi
@@ -114,12 +112,12 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
         for j in range(st, ed):
             jv = val_list_sep['title'][j]
             noise_input_song = []
-            plylst_title_list = list(val_list[jv]['plylst_title'])
+            title_tag_occur = title_to_tag[jv]
+            #plylst_title_list = list(val_list[jv]['title'])
             plylst_date[j - st] = date_to_int(val_list[jv]['updt_date'])
 
-            for lname in plylst_title_list:
-                if lname in letter_to_idx:
-                    input_one_hot[j - st][letter_to_idx[lname]] += 1
+            for tag_idx in title_tag_occur:
+                input_one_hot[j - st][tag_idx - song_size] += 1
 
         inferenced = mi.inference(input_one_hot, id_nn = 'title')
         infer_normalized = zero_one_normalize(inferenced)
@@ -162,19 +160,18 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
         for j in range(st, ed):
             jv = val_list_sep['title_tag'][j]
 
-            #title tensorization
-            plylst_title_list = list(val_list[jv]['plylst_title'])
             plylst_date[j - st] = date_to_int(val_list[jv]['updt_date'])
 
-            for lname in plylst_title_list:
-                if lname in letter_to_idx:
-                    input_one_hot[j - st][letter_to_idx[lname]] += 1
+            #title tensorization
+            title_tag_occur = title_to_tag[jv]
+            for tag_idx in title_tag_occur:
+                input_one_hot[j - st][tag_idx - song_size] += 1
             
             #tag extraction and tensorization
             tag_set = set(val_list[jv]['tags'])
             tag_list_refined = list(tag_set.intersection(tag_to_idx_keyset))
             tag_idxlist_mask = [tag_to_idx[tname] for tname in tag_list_refined]
-            tag_idxlist_onehot = [x - song_size + l_num for x in tag_idxlist_mask]
+            tag_idxlist_onehot = [x - song_size for x in tag_idxlist_mask]
             input_one_hot[j - st][tag_idxlist_onehot] = 1
             mask[j - st][tag_idxlist_mask] = 0
 

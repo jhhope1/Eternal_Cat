@@ -15,7 +15,7 @@ test_ratio = 0.01
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 input_dim = 101252
-output_dim = 57229
+output_dim = 61706
 noise_p = 0.5
 extract_num = 100
 aug_step = 0 #blobfusad

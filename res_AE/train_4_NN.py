@@ -5,16 +5,16 @@ from torch import nn, optim
 from torch.nn import functional as F
 import numpy as np
 import json
-import split_data_4_NN as split_data
+import split_data_4_NN_titletag as split_data
 import os
 
-batch_size = 128
+batch_size = 512
 random_seed = 10
 validation_ratio = 0.01
 test_ratio = 0.01
 
 input_dim = 101252
-output_dim = 57229
+output_dim = 61706
 song_size = 53921
 noise_p = 0.5
 extract_song = 100
@@ -24,17 +24,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 
-epochs = 100
+epochs = 1000
 log_interval = 100
-learning_rate = 1e-3
+learning_rate = 1e-4
 weight_decay = 0
 D_ = 300
-dropout_p = 0.0
+dropout_p = 0.
 
 #train type of nn
-type_nn = ['title_tag', 'song_meta']#,'song_meta_tag' 'title']
+type_nn = ['song_meta']#,'title','title_tag' , ['song_meta_tag']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
-input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
+input_dim = {'title': 7785, 'title_tag': 7785, 'song_meta_tag': 104729, 'song_meta': 96944}
 layer_sizes = {name: (input_dim[name],D_,D_,D_,output_dim) for name in type_nn}
 
 train_loader = {}

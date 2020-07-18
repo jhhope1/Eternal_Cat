@@ -9,15 +9,17 @@ PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 D_ = 300 #layer dim
 
-output_dim = 57229
+output_dim = 61706
 type_nn = ['title', 'title_tag', 'song_meta_tag', 'song_meta']
 model_PATH = {name: os.path.join(data_path, 'res_AE_' + name) + '_weight.pth' for name in type_nn}
-input_dim = {'title': 1000, 'title_tag': 4308, 'song_meta_tag': 100252, 'song_meta': 96944}
-layer_sizes = {name: (input_dim[name],D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim) for name in type_nn}
+#(3308 3308 100252 96944) if titletag
+#(1000 4308 100252 96944) if not
+input_dim = {'title': 7785, 'title_tag': 7785, 'song_meta_tag': 104729, 'song_meta': 96944}
+layer_sizes = {name: (input_dim[name],D_,D_,D_,output_dim) for name in type_nn}
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], is_res=True).to(device) for name in type_nn}
+model = {name: res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes[name], is_res=False).to(device) for name in type_nn}
 
 #layer_sizes = (input_dim,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim)
 #model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes).to(device)

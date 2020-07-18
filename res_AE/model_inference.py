@@ -5,7 +5,7 @@ from torch import nn, optim
 import res_AE_model
 import os
 input_dim = 101252
-output_dim = 57229
+output_dim = 61706
 model_PATH = './res_AE_weight.pth'
 
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
