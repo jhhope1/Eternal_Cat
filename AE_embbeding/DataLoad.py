@@ -152,7 +152,7 @@ class ToTensor(object):
     """numpy array를 tensor(torch)로 변환 시켜줍니다."""
 
     def __call__(self, sample):
-        tot_indices = sample['noise_input_indices'] + sample['meta_input'] + sample['plylst_meta']
+        tot_indices = sample['noise_input_indices'] + sample['meta_input']# + sample['plylst_meta']
         if len(tot_indices) == 0:
             tot_indices = [input_dim + 1]
         if sample['pad'] == 'replace':

@@ -26,12 +26,12 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 3e-4
-D_ = 500
+learning_rate = 1e-3
+D_ = 1000
 
 weight_decay = 0
 layer_sizes = (embedding_dim * embed_vec_num,D_,D_,D_,output_dim)
-dropout_p = 0.3
+dropout_p = 0.0
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=False).to(device)
@@ -56,7 +56,7 @@ def train(epoch, is_load = True):#Kakao AE
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
         recon_batch = model(data['meta_input_indices'].to(device))
-        loss = loss_function(recon_batch, data['target_one_hot'].to(device))
+        loss = custom_loss_function(recon_batch, data['target_one_hot'].to(device))
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
