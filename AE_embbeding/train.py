@@ -8,13 +8,15 @@ import json
 import split_data
 import os
 
-batch_size = 32
+batch_size = 256
 random_seed = 10
 validation_ratio = 0.01
 test_ratio = 0.01
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 input_dim = 105729
+embedding_dim = 30
+embed_vec_num = 100
 output_dim = 61706
 noise_p = 0.5
 extract_num = 100
@@ -24,11 +26,11 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 1e-3
-D_ = 300
+learning_rate = 3e-4
+D_ = 500
 
 weight_decay = 0
-layer_sizes = (input_dim,D_,D_,D_,output_dim)
+layer_sizes = (embedding_dim * embed_vec_num,D_,D_,D_,output_dim)
 dropout_p = 0.3
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -53,8 +55,8 @@ def train(epoch, is_load = True):#Kakao AE
     train_loss = 0
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
-        recon_batch = model(data['meta_input_one_hot'].to(device))
-        loss = custom_loss_function(recon_batch, data['target_one_hot'].to(device))
+        recon_batch = model(data['meta_input_indices'].to(device))
+        loss = loss_function(recon_batch, data['target_one_hot'].to(device))
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -65,7 +67,7 @@ def train(epoch, is_load = True):#Kakao AE
                 noised_inputs = recon_batch.detach()
                 if noise_p > 0.0:
                     noised_inputs = dp(noised_inputs)
-                meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot'].narrow(1,0,input_dim-output_dim)], dim = 1)
+                meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_indices'].narrow(1,0,input_dim-output_dim)], dim = 1)
                 optimizer.zero_grad()
                 recon_batch = model(meta_noised_inputs.to(device))
                 loss = loss_function(recon_batch, noised_inputs)
@@ -92,12 +94,14 @@ def test_accuracy():
     total_lostsong = 0
     correct = 0
     for data in test_loader:
-        noise_img = data['meta_input_one_hot'].to(device)
+        noise_img_indices = data['meta_input_indices'].to(device)
         img = data['target_one_hot'].to(device)
-        output = model(noise_img)
+        output = model(noise_img_indices)
         _, indices = torch.topk(output, extract_num, dim = 1)
+        noise_img = torch.zeros_like(output).to(device)
+        noise_img.scatter(1 , noise_img_indices , 1)
 
-        diff = img - noise_img.narrow(1,0,output_dim)
+        diff = img - noise_img
 
         total_lostsong += torch.sum(diff.view(-1))
         one_hot = torch.zeros(indices.size(0), output_dim).to(device)
@@ -109,5 +113,5 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=False)
+        train(epoch = epoch, is_load=True)
         test_accuracy()
