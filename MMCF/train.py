@@ -1,5 +1,5 @@
 from __future__ import print_function
-import res_AE_model
+import MMCF
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
@@ -8,7 +8,7 @@ import json
 import split_data
 import os
 
-batch_size = 512
+batch_size = 250
 random_seed = 10
 validation_ratio = 0.01
 test_ratio = 0.01
@@ -24,23 +24,23 @@ extract_tag = 10
 aug_step = 0 #blobfusad
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
-model_PATH = os.path.join(data_path, './res_AE_weight.pth')
+model_PATH = os.path.join(data_path, './MMCF_weight.pth')
 epochs = 100
 log_interval = 100
 learning_rate = 1e-3
 D_ = 1000
 
 weight_decay = 0
-layer_sizes = (input_dim,D_,D_,output_dim)
+layer_sizes = (input_dim,D_,D_)
 dropout_p = 0.5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=False).to(device)
+model = MMCF.MMCF(output_dim = output_dim,layer_sizes = layer_sizes, dp_drop_prob = dropout_p).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
 dp = nn.Dropout(p=noise_p)
 
 pos_weight = torch.tensor([-1.]).to(device)
-neg_weight = torch.tensor([-0.1]).to(device)
+neg_weight = torch.tensor([-0.3]).to(device)
 def custom_loss_function(output, target):
     output = torch.clamp(output,min=1e-4,max=1-1e-4)
     loss =  pos_weight * (target * torch.log(output)) + neg_weight* ((1 - target) * torch.log(1 - output))

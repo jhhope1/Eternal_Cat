@@ -3,8 +3,8 @@ import random
 import os
 song_freqs = {}
 tag_freqs = {}
-bounded_freq_song = 70
-bounded_freq_tag = 10
+bounded_freq_song = 15
+bounded_freq_tag = 5
 vector_lists = []
 vector_trainlists = []
 idx_to_item = []

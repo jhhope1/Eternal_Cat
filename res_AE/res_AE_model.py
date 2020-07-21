@@ -28,7 +28,7 @@ def activation(input, kind):
     raise ValueError('Unknown non-linearity type')
 
 class res_AutoEncoder(nn.Module):
-  def __init__(self, layer_sizes, is_res = True, nl_type='selu', dp_drop_prob=0.0, last_layer_activations='sigmoid'):
+  def __init__(self, layer_sizes, is_res = True, nl_type='selu', dp_drop_prob=0.0, last_layer_activations='sigmoid', tied = False):
     super(res_AutoEncoder, self).__init__()
     self.is_res = is_res
     self.layer_sizes = layer_sizes
@@ -70,6 +70,8 @@ class res_AutoEncoder(nn.Module):
         MLP_output = x
       if idx == int(len(self.MLP_list)/2)-1 and self._dp_drop_prob>0:
         x = self.dp(x)
+      if idx != (len(self.MLP_list)-1):
+        x = self.MLP_bn[idx](x)
       '''if idx == int(len(self.layer_sizes)/2):
         x = self.dp(x)'''
     return activation(x, self._last_layer_activations)
