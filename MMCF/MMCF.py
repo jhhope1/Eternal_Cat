@@ -53,16 +53,16 @@ class MMCF(nn.Module):
   def encode(self, x):
     for idx, W in enumerate(self.encode_weight_list):
       x = nn.functional.linear(x, torch.transpose(W,0,1), self.encode_bias_list[idx])
-      '''if idx != (len(self.MLP_encode_list-1)):
-        x = self.MLP_encode_bn(x)'''
+      if idx != (len(self.encode_weight_list)-1):
+        x = self.encode_bn[idx](x)
       # why not..?
-    return torch.sigmoid(x) # ???why...
+    return x # ???why...
   def decode(self, x):
     for idx in range(len(self.encode_weight_list)):
       W = self.encode_weight_list[len(self.encode_weight_list)-1-idx]
       x = torch.nn.functional.linear(x, W, self.decode_bias_list[idx])
-      '''if idx != (len(self.MLP_decode_list)):
-        x = self.MLP_decode_bn(x)'''
+      if idx != (len(self.encode_weight_list)-1):
+        x = self.decode_bn[idx](x)
       #why not..?
     return torch.sigmoid(x)
 

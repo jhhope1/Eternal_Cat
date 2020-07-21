@@ -27,7 +27,7 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './MMCF_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 1e-3
+learning_rate = 5e-3
 D_ = 1000
 
 weight_decay = 0
@@ -117,5 +117,5 @@ def test_accuracy():
         print('::ACCURACY:: of Net \naccuracy: {}(%)\nsong_accuracy: {}(%)\ntag_accuracy: {}(%)'.format( accuracy, song_accuracy, tag_accuracy))
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
+        train(epoch = epoch, is_load=False)
         test_accuracy()

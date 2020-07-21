@@ -25,9 +25,9 @@ aug_step = 0 #blobfusad
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
-epochs = 100
+epochs = 1000
 log_interval = 100
-learning_rate = 1e-3
+learning_rate = 5e-3
 D_ = 1000
 
 weight_decay = 0
@@ -37,6 +37,9 @@ dropout_p = 0.5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=False).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
+steps = 10
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+
 dp = nn.Dropout(p=noise_p)
 
 pos_weight = torch.tensor([-1.]).to(device)
@@ -71,7 +74,7 @@ def train(epoch, is_load = True):#Kakao AE
                 epoch, idx, len(train_loader),
                 100. * idx/len(train_loader),
                 loss.item() / len(data)))   
-
+    scheduler.step()
     print('====> Epoch: {} Average loss: {:.4f}'.format(
           epoch, train_loss / len(train_loader)))
     torch.save(model.state_dict(), model_PATH)
@@ -117,5 +120,5 @@ def test_accuracy():
         print('::ACCURACY:: of Net \naccuracy: {}(%)\nsong_accuracy: {}(%)\ntag_accuracy: {}(%)'.format( accuracy, song_accuracy, tag_accuracy))
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
+        train(epoch = epoch, is_load=False)
         test_accuracy()
