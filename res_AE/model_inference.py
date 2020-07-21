@@ -4,8 +4,8 @@ from torch.nn import functional as F
 from torch import nn, optim
 import res_AE_model
 import os
-input_dim = 105729
-output_dim = 61706
+input_dim = 64540
+output_dim = 20517
 model_PATH = './res_AE_weight.pth'
 
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
@@ -13,10 +13,11 @@ data_path = os.path.join(PARENT_PATH, 'data')
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-D_ = 300 #layer dim
+D_ = 1000 #layer dim
 
-layer_sizes = (input_dim,D_,D_,D_,output_dim)
-model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes,dp_drop_prob=0, is_res = False).to(device)
+
+layer_sizes = (input_dim,D_,D_,output_dim)
+model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes,dp_drop_prob=0, is_res = True).to(device)
 model.load_state_dict(torch.load(os.path.join(data_path,model_PATH), map_location = device))
 model.eval()
 model.to(device)

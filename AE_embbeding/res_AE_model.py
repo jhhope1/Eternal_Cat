@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.nn.init as weight_init
 from torch.autograd import Variable
 input_dim = 105729
-embedding_dim = 30
+embedding_dim = 200
 def activation(input, kind):
   #print("Activation: {}".format(kind))
   if kind == 'selu':

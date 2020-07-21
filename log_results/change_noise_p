@@ -1,0 +1,46 @@
+EXP1) noise_p = 0.5
+drop_out = 0.3
+layer = (input, 300, 300, 300, output)
+
+Train Epoch: 1 [0/441 (0%)]     Loss: 0.003675
+Train Epoch: 1 [100/441 (23%)]  Loss: 0.002017
+Train Epoch: 1 [200/441 (45%)]  Loss: 0.000668
+Train Epoch: 1 [300/441 (68%)]  Loss: 0.000560
+Train Epoch: 1 [400/441 (91%)]  Loss: 0.000445
+====> Epoch: 1 Average loss: 0.0025
+::ACCURACY:: of Net 
+accuracy: 23.807397842407227(%)
+song_accuracy: 20.68008041381836(%)
+tag_accuracy: 44.935062408447266(%)
+Train Epoch: 2 [0/441 (0%)]     Loss: 0.000457
+Train Epoch: 2 [100/441 (23%)]  Loss: 0.000402
+Train Epoch: 2 [200/441 (45%)]  Loss: 0.000405
+Train Epoch: 2 [300/441 (68%)]  Loss: 0.000435
+Train Epoch: 2 [400/441 (91%)]  Loss: 0.000471
+====> Epoch: 2 Average loss: 0.0009
+::ACCURACY:: of Net 
+accuracy: 25.90264892578125(%)
+song_accuracy: 23.193119049072266(%)
+tag_accuracy: 43.87060546875(%)
+Train Epoch: 3 [0/441 (0%)]     Loss: 0.000398
+Train Epoch: 3 [100/441 (23%)]  Loss: 0.000366
+Train Epoch: 3 [200/441 (45%)]  Loss: 0.000367
+Train Epoch: 3 [300/441 (68%)]  Loss: 0.000381
+Train Epoch: 3 [400/441 (91%)]  Loss: 0.000390
+====> Epoch: 3 Average loss: 0.0008
+::ACCURACY:: of Net 
+accuracy: 28.35102653503418(%)
+song_accuracy: 25.630178451538086(%)
+tag_accuracy: 46.021751403808594(%)
+Train Epoch: 4 [0/441 (0%)]     Loss: 0.000374
+Train Epoch: 4 [100/441 (23%)]  Loss: 0.000342
+Train Epoch: 4 [200/441 (45%)]  Loss: 0.000339
+Train Epoch: 4 [300/441 (68%)]  Loss: 0.000378
+Train Epoch: 4 [400/441 (91%)]  Loss: 0.000365
+====> Epoch: 4 Average loss: 0.0007
+::ACCURACY:: of Net 
+accuracy: 28.248252868652344(%)
+song_accuracy: 25.69485855102539(%)
+tag_accuracy: 45.30229949951172(%)
+
+EXP2) noise_p = 0.7

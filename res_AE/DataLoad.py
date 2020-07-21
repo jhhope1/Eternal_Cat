@@ -10,7 +10,7 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
-input_dim = 61706
+output_dim = 20517
 tag_missing_ply_false = 0.5 #1745/(2628+1745)
 tag_missing_ply_true = 0.3 #1745/(2628+1745)
 plylst_missing = 0.81
@@ -47,25 +47,33 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
 
         noise_input_one_hot = np.zeros_like(input_one_hot).tolist()
         
-        if sample['include_plylst']:
-            noise_input_song = []
-            if random.random()>tag_missing_ply_true:
-                for tag in noise_input_tag:
-                    if tag_to_idx.get(tag) != None:
-                        noise_input_one_hot[tag_to_idx[tag]] = 1
+        if sample['type'] == 'train':
+            if sample['include_plylst']:
+                noise_input_song = []
+                if random.random()>tag_missing_ply_true:
+                    for tag in noise_input_tag:
+                        if tag_to_idx.get(tag) != None:
+                            noise_input_one_hot[tag_to_idx[tag]] = 1
+                else:
+                    noise_input_tag = []
             else:
-                noise_input_tag = []
+                for song in noise_input_song:
+                    if song_to_idx.get(str(song)) != None:
+                        noise_input_one_hot[song_to_idx[str(song)]] = 1
+                if random.random()>tag_missing_ply_false:
+                    for tag in noise_input_tag:
+                        if tag_to_idx.get(tag) != None:
+                            noise_input_one_hot[tag_to_idx[tag]] = 1 
+                else:
+                    noise_input_tag = []
         else:
+            for tag in noise_input_tag:
+                if tag_to_idx.get(tag) != None:
+                    noise_input_one_hot[tag_to_idx[tag]] = 1
             for song in noise_input_song:
                 if song_to_idx.get(str(song)) != None:
                     noise_input_one_hot[song_to_idx[str(song)]] = 1
-            if random.random()>tag_missing_ply_false:
-                for tag in noise_input_tag:
-                    if tag_to_idx.get(tag) != None:
-                        noise_input_one_hot[tag_to_idx[tag]] = 1 
-            else:
-                noise_input_tag = []
-
+            
         sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
         sample['noise_input_song'] = noise_input_song
         sample['noise_input_tag'] = noise_input_tag
@@ -95,7 +103,7 @@ class add_meta(object):
 class add_plylst_meta(object):
     def __call__(self,sample):
         plylst_meta = np.zeros(len(letter_to_idx))
-        if random.random()>plylst_missing:
+        if (sample['type']=='train' and random.random()>plylst_missing) or sample['type']!='train':
             for plylst_title in sample['plylst_title']:
                 for l in plylst_title:
                     if l in letter_to_idx:
@@ -110,7 +118,22 @@ class PlaylistDataset(Dataset):
     def __init__(self, transform = Noise_p(0.5)):
 
         with open(os.path.join(data_path, "train.json"), 'r', encoding='utf-8') as f1:
-            self.training_set = json.load(f1)
+            train = json.load(f1)
+        for data in train:
+            data['type'] = 'train'
+        #with open(os.path.join(data_path, "val.json"), 'r', encoding='utf-8') as f:
+        #    val = json.load(f)
+            
+        with open(os.path.join(data_path, "test.json"), 'r', encoding='utf-8') as f:
+            test = json.load(f)
+        for data in test:
+            data['type'] = 'test'
+            
+        #for data in val:
+        #    data['type'] = 'val'
+
+        self.training_set = train + test #+ val
+        
 
         self.song_to_idx = {}
         self.tag_to_idx = {}
@@ -128,7 +151,7 @@ class PlaylistDataset(Dataset):
         songs, tags = self.training_set[idx]['songs'], self.training_set[idx]['tags']
         plylst_title = self.training_set[idx]['plylst_title']
 
-        input_one_hot = np.zeros(input_dim)
+        input_one_hot = np.zeros(output_dim)
 
         input_song = []
         input_tag = []
@@ -145,7 +168,7 @@ class PlaylistDataset(Dataset):
         input_tag = np.array(input_tag)
         #playlist_vec: one hot vec of i'th playlist
 
-        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'include_plylst' : False}
+        sample = {'type': self.training_set[idx]['type'], 'input_one_hot' : input_one_hot, 'target_one_hot' : input_one_hot.copy(), 'input_song' : input_song,'input_tag' : input_tag, 'plylst_title' : plylst_title, 'include_plylst' : False}
 
         if self.transform:
             sample = self.transform(sample)

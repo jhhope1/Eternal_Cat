@@ -3,14 +3,13 @@ import random
 import os
 song_freqs = {}
 tag_freqs = {}
-bounded_freq_song = 15
-bounded_freq_tag = 2
+bounded_freq_song = 70
+bounded_freq_tag = 10
 vector_lists = []
 vector_trainlists = []
 idx_to_item = []
 song_genre_map = {}
 genre_to_idx = {}
-dim = 61706
 
 
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
