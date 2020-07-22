@@ -39,7 +39,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=True).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
 steps = 10
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,steps,eta_min = 3e-5)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode = 'min',factor = 0.99, verbose = True)
 
 dp = nn.Dropout(p=noise_p)
 
@@ -70,15 +70,14 @@ def train(epoch, is_load = True):#Kakao AE
         if torch.isnan(loss) or loss.item() > 5:
             print("loss is nan!")
             return None
-
         if idx % log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, idx, len(train_loader),
                 100. * idx/len(train_loader),
-                loss.item() / len(data)))   
+                loss.item() / len(data))) 
+    scheduler.step(loss)
     ed = time.time()
-    print(ed-st)
-    scheduler.step()
+    print("time = ", ed-st)
     print('====> Epoch: {} Average loss: {:.4f}'.format(
           epoch, train_loss / len(train_loader)))
     torch.save(model.state_dict(), model_PATH)
@@ -124,5 +123,5 @@ def test_accuracy():
         print('::ACCURACY:: of Net \naccuracy: {}(%)\nsong_accuracy: {}(%)\ntag_accuracy: {}(%)'.format( accuracy, song_accuracy, tag_accuracy))
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=False)
+        train(epoch = epoch, is_load=True)
         test_accuracy()
