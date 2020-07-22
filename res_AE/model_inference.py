@@ -4,7 +4,7 @@ from torch.nn import functional as F
 from torch import nn, optim
 import res_AE_model
 import os
-input_dim = 64540
+input_dim = 34139
 output_dim = 20517
 model_PATH = './res_AE_weight.pth'
 

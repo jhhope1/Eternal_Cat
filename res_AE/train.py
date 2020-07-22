@@ -7,6 +7,7 @@ import numpy as np
 import json
 import split_data
 import os
+import time
 
 batch_size = 512
 random_seed = 10
@@ -15,7 +16,7 @@ test_ratio = 0.01
 noise_p = 0.5
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio, noise_p = noise_p)
 
-input_dim = 34139
+input_dim = 38459
 output_dim = 20517
 song_size = 12538
 extract_num = 100
@@ -27,18 +28,18 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 1000
 log_interval = 100
-learning_rate = 5e-3
-D_ = 1000
+learning_rate = 1e-3
+D_ = 300
 
 weight_decay = 0
 layer_sizes = (input_dim,D_,D_,output_dim)
-dropout_p = 0.5
+dropout_p = 0.0
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=False).to(device)
+model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=True).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
 steps = 10
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer,steps,eta_min = 3e-5)
 
 dp = nn.Dropout(p=noise_p)
 
@@ -58,6 +59,7 @@ def train(epoch, is_load = True):#Kakao AE
         model.load_state_dict(torch.load(model_PATH))
     model.train()
     train_loss = 0
+    st = time.time()
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
         recon_batch = model(data['meta_input_one_hot'].to(device))
@@ -74,6 +76,8 @@ def train(epoch, is_load = True):#Kakao AE
                 epoch, idx, len(train_loader),
                 100. * idx/len(train_loader),
                 loss.item() / len(data)))   
+    ed = time.time()
+    print(ed-st)
     scheduler.step()
     print('====> Epoch: {} Average loss: {:.4f}'.format(
           epoch, train_loss / len(train_loader)))

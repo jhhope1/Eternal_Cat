@@ -33,10 +33,12 @@ D_ = 1000
 weight_decay = 0
 layer_sizes = (input_dim,D_,D_)
 dropout_p = 0.5
+steps = 10 #for scheduler
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = MMCF.MMCF(output_dim = output_dim,layer_sizes = layer_sizes, dp_drop_prob = dropout_p).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
 dp = nn.Dropout(p=noise_p)
 
 pos_weight = torch.tensor([-1.]).to(device)
@@ -71,6 +73,7 @@ def train(epoch, is_load = True):#Kakao AE
                 epoch, idx, len(train_loader),
                 100. * idx/len(train_loader),
                 loss.item() / len(data)))   
+    scheduler.step()
 
     print('====> Epoch: {} Average loss: {:.4f}'.format(
           epoch, train_loss / len(train_loader)))

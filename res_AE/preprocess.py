@@ -20,10 +20,7 @@ def add_entity(song, entity):
     if entity not in entity_to_idx:
         return
     idx = entity_to_idx[entity]
-    if song not in song_to_entityidx_map:
-        song_to_entityidx_map[song] = [idx]
-    else:
-        song_to_entityidx_map[song].append(idx)
+    song_to_entityidx_map[song].append(idx)
 def add_entity_idx(entity):
     if entity not in entity_to_idx:
         entity_to_idx[entity] = len(entity_to_idx)
@@ -43,9 +40,9 @@ with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
         add_entity_idx("year."+song_data["issue_date"][0:4])
         #add_entity_idx("month."+song_data["issue_date"][4:6])
 
-
 with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
     data = json.load(f1)
+    song_to_entityidx_map = {i : [] for i in range(len(data))}
     for song_idx, song_data in enumerate(data):
         for genre in song_data["song_gn_gnr_basket"]:
             add_entity(song_idx,genre)
