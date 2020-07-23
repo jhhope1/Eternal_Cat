@@ -39,7 +39,7 @@ def train(epoch, is_load = True):#Kakao AE
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
         recon_batch = model(data['meta_input_one_hot'].to(device))
-        loss = custom_song_loss_function(recon_batch, data['target_one_hot'].to(device))
+        loss = custom_loss_function(recon_batch, data['target_one_hot'].to(device))
         loss.backward()
         train_loss += loss.item()
         optimizer.step()

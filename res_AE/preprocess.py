@@ -1,13 +1,15 @@
 import json
 import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from res_AE import const
+data_path = const.data_path
 
 taking_song = set()
 
-DATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
-WDATA = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data\\')
-
 #바꿀 필요 있을듯? 많이 나온 태그 같은걸로?
-with open(DATA+"song_to_idx.json", 'r',encoding='utf-8') as f1:
+with open(os.path.join(data_path,"song_to_idx.json"), 'r',encoding='utf-8') as f1:
     song_to_idx = json.load(f1)
     for song, idx in song_to_idx.items():
         taking_song.add(int(song))
@@ -27,7 +29,7 @@ def add_entity(song, entity):
 def add_entity_idx(entity):
     if entity not in entity_to_idx:
         entity_to_idx[entity] = len(entity_to_idx)
-with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
+with open(os.path.join(data_path, "song_meta.json"), 'r', encoding='utf-8') as f1:
     data = json.load(f1)
     for song_idx, song_data in enumerate(data):
         if song_idx not in taking_song:
@@ -45,7 +47,7 @@ with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
         
         #add_entity_idx("month."+song_data["issue_date"][4:6])
 
-with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
+with open(os.path.join(data_path, "song_meta.json"), 'r', encoding='utf-8') as f1:
     data = json.load(f1)
     song_to_entityidx_map = {i : [] for i in range(len(data))}
     songidx_to_entityidx_map = {i : [] for i in range(len(song_to_idx))}
@@ -62,7 +64,7 @@ with open(DATA+"song_meta.json", 'r', encoding='utf-8') as f1:
         #add_entity(song_idx,"month."+song_data["issue_date"][4:6])
 
 
-with open(DATA + "train.json", 'r', encoding='utf-8') as f1:
+with open(os.path.join(data_path, "train.json"), 'r', encoding='utf-8') as f1:
     train = json.load(f1)
 
 l_map = {}
@@ -85,14 +87,14 @@ letter_to_idx = {}
 for i in range(l_num):
     letter_to_idx[sorted_l[i][0]] = i
 
-with open(WDATA + "res_song_to_entityidx.json", 'w') as f2:
+with open(os.path.join(data_path,  "res_song_to_entityidx.json"), 'w') as f2:
     json.dump(song_to_entityidx_map,f2)
 
-with open(WDATA + "res_songidx_to_entityidx.json", 'w') as f2:
+with open(os.path.join(data_path, "res_songidx_to_entityidx.json"), 'w') as f2:
     json.dump(songidx_to_entityidx_map,f2)
 
-with open(WDATA + "res_entity_to_idx.json", 'w') as f3:
+with open(os.path.join(data_path, "res_entity_to_idx.json"), 'w') as f3:
     json.dump(entity_to_idx,f3)
 
-with open(DATA + "res_letter_to_idx.json", 'w', encoding='utf-8') as f3:
+with open(os.path.join(data_path, "res_letter_to_idx.json"), 'w', encoding='utf-8') as f3:
     json.dump(letter_to_idx,f3,ensure_ascii=False)

@@ -4,19 +4,17 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from res_AE import const
+data_path = const.data_path
 #const.show_vars()
 song_freqs = {}
 tag_freqs = {}
-bounded_freq_song = 50
-bounded_freq_tag = 10
+bounded_freq_song = 10
+bounded_freq_tag = 5
 vector_lists = []
 vector_trainlists = []
 idx_to_item = []
 song_genre_map = {}
 genre_to_idx = {}
-
-PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
 
 with open(os.path.join(data_path, "train.json"), "r", encoding="utf-8") as f1:
     data = json.load(f1)
@@ -93,25 +91,25 @@ with open(os.path.join(data_path, "train.json"), "r", encoding="utf-8") as f1:
         vector_lists.append(tmp_list)
         vector_trainlists.append(tmp_trainlist)
     
-with open("data/playlist_train_idxs.json", 'w') as f2:
+with open(os.path.join(data_path, "playlist_train_idxs.json"), 'w') as f2:
     json.dump(vector_trainlists, f2)
 
-with open("data/playlist_test_idxs.json", 'w') as f2:
+with open(os.path.join(data_path, "playlist_test_idxs.json"), 'w') as f2:
     json.dump(vector_lists, f2)
 
-with open("data/tag_to_idx.json", "w", encoding = 'utf-8') as f3:
+with open(os.path.join(data_path,"tag_to_idx.json"), "w", encoding = 'utf-8') as f3:
     json.dump(tag_to_idx, f3, ensure_ascii=False)
 
-with open("data/song_to_idx.json", "w", encoding = 'utf-8') as f3:
+with open(os.path.join(data_path,"song_to_idx.json"), "w", encoding = 'utf-8') as f3:
     json.dump(song_to_idx, f3, ensure_ascii=False)
 
-with open("data/idx_to_item.json", "w", encoding = 'utf-8') as f3:
+with open(os.path.join(data_path,"idx_to_item.json"), "w", encoding = 'utf-8') as f3:
     json.dump(idx_to_item, f3, ensure_ascii=False)
 
-with open("data/gerne_to_idx.json", "w", encoding = 'utf-8') as f3:
+with open(os.path.join(data_path,"gerne_to_idx.json"), "w", encoding = 'utf-8') as f3:
     json.dump(genre_to_idx, f3, ensure_ascii=False)
 
-with open("data/song_genre_map.json", "w", encoding = 'utf-8') as f3:
+with open(os.path.join(data_path,"song_genre_map.json"), "w", encoding = 'utf-8') as f3:
     json.dump(song_genre_map, f3, ensure_ascii = False)
 
 const.show_vars()

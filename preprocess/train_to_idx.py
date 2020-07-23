@@ -1,8 +1,9 @@
 import json
 import os
-
-PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from res_AE import const
+data_path = const.data_path
 
 with open(os.path.join(data_path, "train.json"), "r", encoding="utf-8") as f1:
     train = json.load(f1)
