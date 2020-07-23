@@ -6,11 +6,10 @@ import random
 song_size = 29296
 item_size = 31202
 tag_size = item_size - song_size
-song_avg = 30
-tag_avg = 5
+
 
 class Dataset_train(torch.utils.data.Dataset):
-    def __init__(self):
+    def __init__(self, song_avg, tag_avg):
         uipairs = []
         labels = []
         with open("playlist_train_idxs.json", 'r') as f1:
@@ -32,8 +31,9 @@ class Dataset_train(torch.utils.data.Dataset):
                     if rand not in loc_exi:
                         uipairs.append((idx, rand))
                         labels.append(0)
-                if idx > 5000:
-                    break
+                
+            
+                
         self.uipairs = torch.tensor(uipairs)
         self.labels = torch.tensor(labels)
         self.len = len(labels)
