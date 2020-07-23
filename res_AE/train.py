@@ -28,7 +28,7 @@ data_path = os.path.join(PARENT_PATH, 'data')
 model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 1000
 log_interval = 100
-learning_rate = 1e-3
+learning_rate = 3e-4
 D_ = 300
 
 weight_decay = 0
@@ -39,12 +39,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=True).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
 steps = 10
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode = 'min',factor = 0.99, verbose = True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5 , mode = 'min',factor = 0.9, verbose = True)
 
 dp = nn.Dropout(p=noise_p)
 
 pos_weight = torch.tensor([-1.]).to(device)
-neg_weight = torch.tensor([-0.1]).to(device)
+neg_weight = torch.tensor([-0.5]).to(device)
 def custom_loss_function(output, target):
     output = torch.clamp(output,min=1e-4,max=1-1e-4)
     loss =  pos_weight * (target * torch.log(output)) + neg_weight* ((1 - target) * torch.log(1 - output))
@@ -82,6 +82,46 @@ def train(epoch, is_load = True):#Kakao AE
           epoch, train_loss / len(train_loader)))
     torch.save(model.state_dict(), model_PATH)
 
+def train_accuracy():
+    model.eval()
+    with torch.no_grad():
+        total_lost = 0
+        total_lostsong = 0
+        total_losttag = 0
+        correct = 0
+        correct_song = 0
+        correct_tag = 0
+        for idx, data in enumerate(train_loader):
+            if idx==10:
+                break
+            noise_img = data['meta_input_one_hot']
+            img = data['target_one_hot']
+            output = model(noise_img.to(device)) #is this right?
+            _, indices_tag = torch.topk(output.narrow(1,0,song_size), extract_song, dim = 1)
+            _, indices_song = torch.topk(output.narrow(1,song_size,output_dim-song_size), extract_tag, dim = 1) 
+            indices_song += torch.tensor(song_size).long()
+            indices = torch.cat((indices_song, indices_tag) , dim = 1)
+
+            diff = img - noise_img.narrow(1,0,output_dim)
+
+            total_lost += torch.sum(diff.reshape(-1))
+            total_lostsong += torch.sum(diff.narrow(1,0,song_size).reshape(-1))
+            total_losttag += torch.sum(diff.narrow(1,song_size,output_dim-song_size).reshape(-1))
+
+            one_hot = torch.zeros(indices_song.size(0), output_dim).to(device)
+            one_hot = one_hot.scatter(1, indices.to(device).data, 1)
+
+            one_hot_filter = one_hot * diff.to(device)
+            correct_song += torch.sum(one_hot_filter.narrow(1,0,song_size).reshape(-1))
+            correct_tag += torch.sum(one_hot_filter.narrow(1,song_size,output_dim-song_size).reshape(-1))
+            correct += torch.sum(one_hot_filter.reshape(-1))
+
+        accuracy = None
+        if total_lostsong > 0:
+            accuracy = correct / total_lost * 100.
+            tag_accuracy = correct_tag / total_losttag * 100.
+            song_accuracy = correct_song / total_lostsong * 100.
+        print('::train_ACCURACY:: of Net \naccuracy: {}(%)\nsong_accuracy: {}(%)\ntag_accuracy: {}(%)'.format( accuracy, song_accuracy, tag_accuracy))
 def test_accuracy():
     model.load_state_dict(torch.load(model_PATH))
     model.eval()
@@ -123,5 +163,6 @@ def test_accuracy():
         print('::ACCURACY:: of Net \naccuracy: {}(%)\nsong_accuracy: {}(%)\ntag_accuracy: {}(%)'.format( accuracy, song_accuracy, tag_accuracy))
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
+        #train(epoch = epoch, is_load=True)
+        train_accuracy()
         test_accuracy()

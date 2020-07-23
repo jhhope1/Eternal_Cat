@@ -4,7 +4,7 @@ from torch.nn import functional as F
 from torch import nn, optim
 import res_AE_model
 import os
-input_dim = 34139
+input_dim = 38459
 output_dim = 20517
 model_PATH = './res_AE_weight.pth'
 
@@ -13,7 +13,7 @@ data_path = os.path.join(PARENT_PATH, 'data')
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-D_ = 1000 #layer dim
+D_ = 400 #layer dim
 
 
 layer_sizes = (input_dim,D_,D_,output_dim)
