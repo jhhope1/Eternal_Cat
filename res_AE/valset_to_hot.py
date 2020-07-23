@@ -4,7 +4,7 @@ import torch
 import time #just for benchmark
 
 #input_dim = 100058
-output_dim = 20517
+output_dim = 61706
 song_size = 0
 tag_size = 0
 entity_size = 0

@@ -15,7 +15,7 @@ test_ratio = 0.01
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
 input_dim = 105729
-embedding_dim = 200
+embedding_dim = 30
 embed_vec_num = 100
 output_dim = 61706
 noise_p = 0.5
@@ -23,10 +23,10 @@ extract_num = 100
 aug_step = 0 #blobfusad
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
-model_PATH = os.path.join(data_path, './res_AE_embed_weight.pth')
+model_PATH = os.path.join(data_path, './res_AE_weight.pth')
 epochs = 100
 log_interval = 100
-learning_rate = 3e-5
+learning_rate = 1e-3
 D_ = 1000
 
 weight_decay = 0
@@ -39,7 +39,7 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight
 dp = nn.Dropout(p=noise_p)
 
 pos_weight = torch.tensor([-1.]).to(device)
-neg_weight = torch.tensor([-0.1]).to(device)
+neg_weight = torch.tensor([-0.01]).to(device)
 def custom_loss_function(output, target):
     output = torch.clamp(output,min=1e-8,max=1-1e-8)
     loss =  pos_weight * (target * torch.log(output)) + neg_weight* ((1 - target) * torch.log(1 - output))
@@ -56,7 +56,7 @@ def train(epoch, is_load = True):#Kakao AE
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
         recon_batch = model(data['meta_input_indices'].to(device))
-        loss = loss_function(recon_batch, data['target_one_hot'].to(device))
+        loss = custom_loss_function(recon_batch, data['target_one_hot'].to(device))
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -73,7 +73,7 @@ def train(epoch, is_load = True):#Kakao AE
                 loss = loss_function(recon_batch, noised_inputs)
                 loss.backward()
                 optimizer.step()
-        if torch.isnan(loss) or loss.item() > 10:
+        if torch.isnan(loss):
             print("loss is nan!")
             return None
 

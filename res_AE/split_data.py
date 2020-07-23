@@ -12,14 +12,8 @@ import random
 from DataLoad import PlaylistDataset
 import DataLoad
 
-def splited_loader(validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, batch_size = 128, noise_p = 0.5):
+def splited_loader(validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, batch_size = 128):
     transformed_dataset = PlaylistDataset(transform=transforms.Compose([
-                                                DataLoad.add_plylst_meta(),
-                                                DataLoad.Noise_p(noise_p),
-                                                DataLoad.add_meta(),
-                                                DataLoad.ToTensor()
-                                            ]))
-    transformed_test_dataset = PlaylistDataset(transform=transforms.Compose([
                                                 DataLoad.add_plylst_meta(),
                                                 DataLoad.Noise_p(0.5),
                                                 DataLoad.add_meta(),
@@ -45,10 +39,10 @@ def splited_loader(validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, b
     )
 
     valid_loader = torch.utils.data.DataLoader(
-        transformed_test_dataset, batch_size=batch_size, sampler=valid_sampler, num_workers=0
+        transformed_dataset, batch_size=batch_size, sampler=valid_sampler, num_workers=0
     )
 
     test_loader = torch.utils.data.DataLoader(
-        transformed_test_dataset, batch_size=batch_size, sampler=test_sampler, num_workers=0
+        transformed_dataset, batch_size=batch_size, sampler=test_sampler, num_workers=0
     )
     return (train_loader, valid_loader, test_loader)
