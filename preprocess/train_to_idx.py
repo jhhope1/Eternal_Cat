@@ -17,16 +17,20 @@ for _, data in enumerate(train):
     song_indices = []
     tag_indices = []
     title_indices = []
+    songs = []
     for song in data['songs']:
         if song_to_idx.get(str(song)) != None:
             song_indices.append(song_to_idx[str(song)])
+        else:
+            songs.append(str(song))
     for tag in data['tags']:
         if tag_to_idx.get(tag) != None:
             tag_indices.append(tag_to_idx[tag])
     for l in data['plylst_title']:
         if res_letter_to_idx.get(l) != None:
             title_indices.append(res_letter_to_idx[l])
-    data['songs'] = song_indices
+    data['songs_indices'] = song_indices
+    data['songs'] = songs
     data['tags'] = tag_indices
     data['plylst_title'] = title_indices
 
