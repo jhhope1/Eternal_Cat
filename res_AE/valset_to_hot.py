@@ -2,9 +2,8 @@ import json
 import os
 import torch
 import time #just for benchmark
+from const import *
 
-#input_dim = 100058
-output_dim = 61706
 song_size = 0
 tag_size = 0
 entity_size = 0
@@ -12,11 +11,6 @@ l_num = 0
 song_to_idx = {}
 tag_to_idx = {}
 idx_to_item = []
-
-PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 batch_size = 2048 #adjust up to your memory limit
 use_meta = True #toggle if you don't want to use meta
@@ -63,8 +57,8 @@ song_to_entityidx_key_set = set(song_to_entityidx.keys())
 
 import model_inference as mi
 
-onehot_len = output_dim + entity_size if use_meta else output_dim
-onehot_len = onehot_len + l_num if use_ply_meta else onehot_len
+#onehot_len = output_dim + entity_size if use_meta else output_dim
+#onehot_len = onehot_len + l_num if use_ply_meta else onehot_len
 song_add = 100
 tag_add = 10
 
@@ -91,7 +85,7 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
         batch_len = min(batch_size, len(val_list) - st)
         ed = st + batch_len
         print('loading batch... [', st, ',', ed, ')')
-        input_one_hot = torch.zeros(batch_len, onehot_len)
+        input_one_hot = torch.zeros(batch_len, input_dim)
         mask = torch.ones(batch_len, output_dim) #selector for topk
         plylst_date = torch.zeros(batch_len, 1).to(device)
 

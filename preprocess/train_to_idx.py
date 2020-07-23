@@ -31,7 +31,7 @@ for _, data in enumerate(train):
             title_indices.append(res_letter_to_idx[l])
     data['songs_indices'] = song_indices
     data['songs'] = songs
-    data['tags'] = tag_indices
+    data['tags_indices'] = tag_indices
     data['plylst_title'] = title_indices
 
 with open(os.path.join(data_path, "train_to_idx.json"), 'w', encoding='utf-8') as f2:

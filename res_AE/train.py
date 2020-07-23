@@ -8,43 +8,21 @@ import json
 import split_data
 import os
 import time
-
-batch_size = 512
-random_seed = 10
-validation_ratio = 0.01
-test_ratio = 0.01
+from const import *
 train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=batch_size, random_seed=random_seed, test_ratio=test_ratio, validation_ratio=validation_ratio)
 
-input_dim = 56270
-output_dim = 20517
-song_size = 17937
-noise_p = 0.5
-extract_song = 100
-extract_tag = 10
-aug_step = 0 #blobfusad
-PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
-model_PATH = os.path.join(data_path, './res_AE_weight.pth')
-epochs = 1000
-log_interval = 100
-learning_rate = 1e-3
-D_ = 300
-
-weight_decay = 0
-layer_sizes = (input_dim,D_,D_,D_,output_dim)
-dropout_p = 0.3
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=True).to(device)
+model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=is_res).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
-steps = 10
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5 , mode = 'min',factor = 0.9, verbose = True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3 , mode = 'min',factor = 0.7, verbose = True)
 
-dp = nn.Dropout(p=noise_p)
 
-pos_weight = torch.tensor([-1.]).to(device)
-neg_weight = torch.tensor([-0.3]).to(device)
 def custom_loss_function(output, target):
+    output = torch.clamp(output,min=1e-4,max=1-1e-4)
+    loss =  pos_weight * (target * torch.log(output)) + neg_weight* ((1 - target) * torch.log(1 - output))
+    return torch.mean(loss)
+def custom_song_loss_function(output, target):
+    output = output.narrow(1,0,song_size)
+    target = target.narrow(1,0,song_size)
     output = torch.clamp(output,min=1e-4,max=1-1e-4)
     loss =  pos_weight * (target * torch.log(output)) + neg_weight* ((1 - target) * torch.log(1 - output))
     return torch.mean(loss)
@@ -61,11 +39,11 @@ def train(epoch, is_load = True):#Kakao AE
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
         recon_batch = model(data['meta_input_one_hot'].to(device))
-        loss = custom_loss_function(recon_batch, data['target_one_hot'].to(device))
+        loss = custom_song_loss_function(recon_batch, data['target_one_hot'].to(device))
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
-
+        '''
         if aug_step > 0:
             # Dense refeed
             for _ in range(aug_step):
@@ -78,6 +56,7 @@ def train(epoch, is_load = True):#Kakao AE
                 loss = loss_function(recon_batch, noised_inputs)
                 loss.backward()
                 optimizer.step()
+        '''
         if torch.isnan(loss):
             print("loss is nan!")
             return None
@@ -177,6 +156,6 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=True)
+        train(epoch = epoch, is_load=False)
         train_accuracy()
         test_accuracy()

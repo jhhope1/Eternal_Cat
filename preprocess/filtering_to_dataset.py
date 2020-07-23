@@ -1,6 +1,10 @@
 import json
 import random
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from res_AE import const
+#const.show_vars()
 song_freqs = {}
 tag_freqs = {}
 bounded_freq_song = 50
@@ -10,8 +14,6 @@ vector_trainlists = []
 idx_to_item = []
 song_genre_map = {}
 genre_to_idx = {}
-dim = 61706
-
 
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
@@ -44,11 +46,16 @@ with open(os.path.join(data_path, "train.json"), "r", encoding="utf-8") as f1:
     
 
     print(vector_size)
+    #song size
+    const.song_size = vector_size
+
     for tag, freq in tag_freqs.items():
         if freq > bounded_freq_tag:
             tag_to_idx[tag] = vector_size
             idx_to_item.append(tag)
             vector_size += 1
+    
+    const.output_dim = vector_size
     print(vector_size, " is size of this vector")
     with open(os.path.join(data_path, "song_meta.json"), "r", encoding = 'utf-8') as f2:
         songmap = json.load(f2)
@@ -86,10 +93,6 @@ with open(os.path.join(data_path, "train.json"), "r", encoding="utf-8") as f1:
         vector_lists.append(tmp_list)
         vector_trainlists.append(tmp_trainlist)
     
-    print(len(vector_lists), len(vector_trainlists))
-
-
-    
 with open("data/playlist_train_idxs.json", 'w') as f2:
     json.dump(vector_trainlists, f2)
 
@@ -110,3 +113,5 @@ with open("data/gerne_to_idx.json", "w", encoding = 'utf-8') as f3:
 
 with open("data/song_genre_map.json", "w", encoding = 'utf-8') as f3:
     json.dump(song_genre_map, f3, ensure_ascii = False)
+
+const.show_vars()
