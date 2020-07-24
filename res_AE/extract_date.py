@@ -3,10 +3,7 @@ import numpy as np
 import torch
 import os
 import json
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
+from const import *
 
 with open(os.path.join(data_path, 'train.json'), encoding='utf-8') as f1:
     train = json.load(f1)
