@@ -12,7 +12,7 @@ song_to_idx = {}
 tag_to_idx = {}
 idx_to_item = []
 
-batch_size = 2048 #adjust up to your memory limit
+batch_size = 512 #adjust up to your memory limit
 use_meta = True #toggle if you don't want to use meta
 use_ply_meta = True
 

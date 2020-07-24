@@ -13,7 +13,7 @@ train_loader, valid_loader, test_loader = split_data.splited_loader(batch_size=b
 
 model = res_AE_model.res_AutoEncoder(layer_sizes = layer_sizes, dp_drop_prob = dropout_p, is_res=is_res).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)#l2_weight
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3 , mode = 'min',factor = 0.7, verbose = True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3 , mode = 'min',factor = 0.9, verbose = True)
 
 
 def custom_loss_function(output, target):
