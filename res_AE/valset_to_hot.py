@@ -3,6 +3,11 @@ import os
 import torch
 import time #just for benchmark
 from const import *
+import argparse
+
+parser = argparse.ArgumentParser(description='Ensemble Reduction Type')
+parser.add_argument('--ens',dest='op_type',action='operation type',type=str,default='sum')
+args = parser.parse_args()
 
 song_size = 0
 tag_size = 0
@@ -123,7 +128,7 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             input_one_hot[j - st][tag_idxlist] = 1
             mask[j - st][tag_idxlist] = 0
         #Inference start
-        inferenced = mi.inference(input_one_hot.to(device))
+        inferenced = mi.inference(input_one_hot.to(device), op_type=args.op_type)
         infer_normalized = zero_one_normalize(inferenced)
         infer_masked = infer_normalized * mask.to(device)
         infer_masked = infer_masked * ((date_mask <= plylst_date).float().to(device))

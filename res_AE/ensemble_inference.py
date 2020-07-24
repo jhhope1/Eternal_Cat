@@ -41,13 +41,13 @@ def ensemble(recons, op_type = 'sum'):
             ret = torch.min(ret, x)
     return ret
 
-def inference(one_hot: torch.Tensor): #one_hot: torch.FloatTensor
+def inference(one_hot: torch.Tensor, op_type='sum'): #one_hot: torch.FloatTensor
     with torch.no_grad():
         recon = model(one_hot).to(device)
         recon2 = model2(one_hot).to(device)
         recon3 = model3(one_hot).to(device)
         recon4 = model4(one_hot).to(device)
         recons = [recon, recon2, recon3, recon4]
-        
-        return ensemble(recons, op_type = 'sum')
+
+        return ensemble(recons, op_type = op_type)
 
