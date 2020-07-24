@@ -14,11 +14,12 @@ aug_step = 0 #blobfusad
 epochs = 1000
 log_interval = 100
 learning_rate = 1e-3
-D_ = 600
+D_ = 300
 weight_decay = 1e-10
 layer_sizes = (input_dim,D_,D_,D_,output_dim)
 dropout_p = 0.0
 is_res = True
+aug_step = 0
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
 try:

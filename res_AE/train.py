@@ -43,20 +43,20 @@ def train(epoch, is_load = True):#Kakao AE
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
-        '''
+        
         if aug_step > 0:
             # Dense refeed
             for _ in range(aug_step):
                 noised_inputs = recon_batch.detach()
                 if noise_p > 0.0:
-                    noised_inputs = dp(noised_inputs)
-                meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot'].narrow(1,0,input_dim-output_dim)], dim = 1)
+                    noised_inputs = nn.Dropout(noise_p)(noised_inputs)
+                meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot'].narrow(1,output_dim,input_dim-output_dim).to(device)], dim = 1)
                 optimizer.zero_grad()
                 recon_batch = model(meta_noised_inputs.to(device))
                 loss = loss_function(recon_batch, noised_inputs)
                 loss.backward()
                 optimizer.step()
-        '''
+        
         if torch.isnan(loss):
             print("loss is nan!")
             return None
