@@ -49,8 +49,8 @@ def train(epoch, is_load = True):#Kakao AE
             for _ in range(aug_step):
                 noised_inputs = recon_batch.detach()
                 if noise_p > 0.0:
-                    noised_inputs = nn.Dropout(noise_p)(noised_inputs)
-                meta_noised_inputs = torch.cat([noised_inputs,data['meta_input_one_hot'].narrow(1,output_dim,input_dim-output_dim).to(device)], dim = 1)
+                    noised_inputs_dp = nn.Dropout(noise_p)(noised_inputs)
+                meta_noised_inputs = torch.cat([noised_inputs_dp,data['meta_input_one_hot'].narrow(1,output_dim,input_dim-output_dim).to(device)], dim = 1)
                 optimizer.zero_grad()
                 recon_batch = model(meta_noised_inputs.to(device))
                 loss = loss_function(recon_batch, noised_inputs)
