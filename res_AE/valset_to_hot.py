@@ -6,7 +6,7 @@ from const import *
 import argparse
 
 parser = argparse.ArgumentParser(description='Ensemble Reduction Type')
-parser.add_argument('--ens',dest='op_type',action='operation type',type=str,default='sum')
+parser.add_argument('--ens',dest='op_type',action='store',default='sum')
 args = parser.parse_args()
 
 song_size = 0
@@ -60,7 +60,7 @@ with open(os.path.join(data_path,'song_to_newdt.json'), 'r', encoding='utf-8') a
 letter_to_idx_keyset = set(letter_to_idx.keys())
 song_to_entityidx_key_set = set(song_to_entityidx.keys())
 
-import model_inference as mi
+import ensemble_inference as mi
 
 #onehot_len = output_dim + entity_size if use_meta else output_dim
 #onehot_len = onehot_len + l_num if use_ply_meta else onehot_len
