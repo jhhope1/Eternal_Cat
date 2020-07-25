@@ -39,7 +39,7 @@ def train(epoch, is_load = True):#Kakao AE
     for idx,data in enumerate(train_loader):
         optimizer.zero_grad()
         recon_batch = model(data['meta_input_one_hot'].to(device))
-        loss = loss_function(recon_batch, data['target_one_hot'].to(device))
+        loss = custom_song_loss_function(recon_batch, data['target_one_hot'].to(device))
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -156,6 +156,6 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=False)
+        train(epoch = epoch, is_load=True)
         train_accuracy()
         test_accuracy()
