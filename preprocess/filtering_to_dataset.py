@@ -90,7 +90,20 @@ with open(os.path.join(data_path, "train.json"), "r", encoding="utf-8") as f1:
                 
         vector_lists.append(tmp_list)
         vector_trainlists.append(tmp_trainlist)
-    
+
+idx_to_song = {}
+idx_to_tag = {}
+
+for song in song_to_idx:
+    idx_to_song[song_to_idx[song]] = song
+for tag in tag_to_idx:
+    idx_to_tag[tag_to_idx[tag]] = tag
+
+with open(os.path.join(data_path,"idx_to_tag.json"),'w', encoding='utf-8') as f:
+    json.dump(idx_to_tag,f, ensure_ascii=False)
+with open(os.path.join(data_path,"idx_to_song.json"),'w', encoding='utf-8') as f:
+    json.dump(idx_to_song,f, ensure_ascii=False)
+
 with open(os.path.join(data_path, "playlist_train_idxs.json"), 'w') as f2:
     json.dump(vector_trainlists, f2)
 

@@ -60,7 +60,7 @@ with open(os.path.join(data_path,'song_to_newdt.json'), 'r', encoding='utf-8') a
 letter_to_idx_keyset = set(letter_to_idx.keys())
 song_to_entityidx_key_set = set(song_to_entityidx.keys())
 
-import ensemble_inference as mi
+import model_inference as mi
 
 #onehot_len = output_dim + entity_size if use_meta else output_dim
 #onehot_len = onehot_len + l_num if use_ply_meta else onehot_len
@@ -123,12 +123,16 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             
             #tag extraction and tensorization
             tag_set = set(val_list[j]['tags'])
+            for tag in tag_set:
+                for l in tag:
+                    if l in letter_to_idx:
+                        input_one_hot[j - st][output_dim + letter_to_idx[l]] = 1
             tag_list_refined = list(tag_set.intersection(tag_to_idx_keyset))
             tag_idxlist = [tag_to_idx[tname] for tname in tag_list_refined]
             input_one_hot[j - st][tag_idxlist] = 1
             mask[j - st][tag_idxlist] = 0
         #Inference start
-        inferenced = mi.inference(input_one_hot.to(device), op_type=args.op_type)
+        inferenced = mi.inference(input_one_hot.to(device))
         infer_normalized = zero_one_normalize(inferenced)
         infer_masked = infer_normalized * mask.to(device)
         infer_masked = infer_masked * ((date_mask <= plylst_date).float().to(device))

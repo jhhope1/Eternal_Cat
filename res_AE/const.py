@@ -7,6 +7,7 @@ test_ratio = 0.01
 input_dim =  137580
 output_dim =  79303
 song_size =  75078
+chunk_size = 0
 noise_p = 0.5
 extract_song = 100
 extract_tag = 10
@@ -22,12 +23,8 @@ is_res = True
 aug_step = 0
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
 data_path = os.path.join(PARENT_PATH, 'data')
-try:
-    import google.colab
-except ModuleNotFoundError:
-    data_path = os.path.join(PARENT_PATH, 'data')
-else:
-    data_path = os.path.join(PARENT_PATH, 'drive/Shared drives/Eternal_Cat/data')   
+
+data_path = os.path.join(PARENT_PATH, 'data')
  
 model_PATH = os.path.join(data_path, './res_AE_weight'+str(layer_sizes)+'res'+str(is_res)+'dp'+str(dropout_p)+'.pth')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

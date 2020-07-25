@@ -84,15 +84,16 @@ def train_accuracy():
         for idx, data in enumerate(train_loader):
             if idx==10:
                 break
-            noise_img = data['meta_input_one_hot']
+            noise_img = data['noise_img']
+            meta_input_one_hot = data['meta_input_one_hot']
             img = data['target_one_hot']
-            output = model(noise_img.to(device)) #is this right?
+            output = model(meta_input_one_hot.to(device)) #is this right?
             _, indices_tag = torch.topk(output.narrow(1,0,song_size), extract_song, dim = 1)
             _, indices_song = torch.topk(output.narrow(1,song_size,output_dim-song_size), extract_tag, dim = 1) 
             indices_song += torch.tensor(song_size).long()
             indices = torch.cat((indices_song, indices_tag) , dim = 1)
 
-            diff = img - noise_img.narrow(1,0,output_dim)
+            diff = img - noise_img
 
             total_lost += torch.sum(diff.reshape(-1))
             total_lostsong += torch.sum(diff.narrow(1,0,song_size).reshape(-1))
@@ -125,15 +126,16 @@ def test_accuracy():
         for idx, data in enumerate(test_loader):
             if idx==10:
                 break
-            noise_img = data['meta_input_one_hot']
+            noise_img = data['noise_img']
+            meta_input_one_hot = data['meta_input_one_hot']
             img = data['target_one_hot']
-            output = model(noise_img.to(device)) #is this right?
+            output = model(meta_input_one_hot.to(device)) #is this right?
             _, indices_tag = torch.topk(output.narrow(1,0,song_size), extract_song, dim = 1)
             _, indices_song = torch.topk(output.narrow(1,song_size,output_dim-song_size), extract_tag, dim = 1) 
             indices_song += torch.tensor(song_size).long()
             indices = torch.cat((indices_song, indices_tag) , dim = 1)
 
-            diff = img - noise_img.narrow(1,0,output_dim)
+            diff = img - noise_img
 
             total_lost += torch.sum(diff.reshape(-1))
             total_lostsong += torch.sum(diff.narrow(1,0,song_size).reshape(-1))
@@ -156,6 +158,6 @@ def test_accuracy():
 
 if __name__ == "__main__":
     for epoch in range(1, epochs + 1):
-        train(epoch = epoch, is_load=False)
+        #train(epoch = epoch, is_load=True)
         train_accuracy()
         test_accuracy()

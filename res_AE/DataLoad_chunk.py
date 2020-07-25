@@ -24,6 +24,16 @@ with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8
 with open(os.path.join(data_path,"res_letter_to_idx.json"), 'r', encoding='utf-8') as f5:
     letter_to_idx = json.load(f5)
 
+with open(os.path.join(data_path,"object_to_chunkidx.json"), 'r', encoding='utf-8') as f5:
+    object_to_chunkidx = json.load(f5)
+with open(os.path.join(data_path,"idx_to_song.json"), 'r', encoding='utf-8') as f:
+    idx_to_song = json.load(f)
+with open(os.path.join(data_path,"idx_to_tag.jsong"),'r', encoding='utf-8') as f:
+    idx_to_tag = json.load(f)
+
+for obj in object_to_chunkidx:
+    object_to_chunkidx[obj] = np.array(object_to_chunkidx[obj]).astype(np.int32)
+
 
 class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['include_plylst']' part
     def __init__(self, noise_p):
@@ -33,6 +43,7 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
         input_one_hot = sample['input_one_hot']
         input_song = sample['input_song']
         input_tag_idx = sample['input_tag_idx']
+        input_tag = sample['input_tag']
         input_song_idx = sample['input_song_idx']
 
         noise_input_song = np.random.choice(input_song, replace=False,
@@ -41,6 +52,8 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
                            size=int(input_song_idx.size * (1-self.noise_p)))
         noise_input_tag_idx = np.random.choice(input_tag_idx, replace=False,
                            size=int(input_tag_idx.size * (1-self.noise_p)))
+        noise_input_tag = np.random.choice(input_tag, replace=False,
+                           size=int(input_tag.size * (1-self.noise_p)))
 
         noise_input_one_hot = np.zeros_like(input_one_hot)
         
@@ -49,11 +62,17 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
             noise_input_song_idx = []
             if random.random()>tag_missing_ply_true:
                 noise_input_one_hot[noise_input_tag_idx] = 1
+            else:
+                noise_input_tag_idx = []
         else:
             noise_input_one_hot[noise_input_song_idx] = 1
             if random.random()>tag_missing_ply_false:
-                noise_input_one_hot[noise_input_tag_idx] = 1
-            
+                noise_input_one_hot[noise_input_tag_idx] = 1 
+            else:
+                noise_input_tag_idx = []
+        
+        sample['noise_input_tag'] = noise_input_tag
+        sample['noise_input_tag_idx'] = noise_input_tag_idx
         sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
         sample['noise_input_song'] = noise_input_song
         sample['noise_input_song_idx'] = noise_input_song_idx
@@ -61,34 +80,41 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
 
 class add_meta(object):
     def __call__(self,sample):
-        meta = np.zeros(len(entity_to_idx))
         for song in sample['noise_input_song']:
-            meta[song_to_entityidx[str(song)]] += 1
+            sample['chunk_one_hot'][object_to_chunkidx[str(song)]] += 1
         for song_idx in sample['noise_input_song_idx']:
-            meta[songidx_to_entityidx[str(song_idx)]] += 1
-        sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , meta))
+            sample['chunk_one_hot'][object_to_chunkidx[idx_to_song(str(song_idx))]] += 1
+
+        for tag in sample['noise_input_tag']:
+            sample['chunk_one_hot'][object_to_chunkidx[tag]] += 1
+        for tag_idx in sample['noise_input_tag_idx']:
+            sample['chunk_one_hot'][object_to_chunkidx[idx_to_tag(str(tag_idx))]] += 1
+
+        sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , sample['chunk_one_hot']))
         return sample
 
 class add_plylst_meta(object):
     def __call__(self,sample):
-        plylst_meta = np.zeros(len(letter_to_idx))
+        chunk_one_hot = np.zeros(chunk_size)
+        ######################################### should change plylst_title to real_playlist_title
+        ######################################### should change train_to_idx_chunk
         if random.random()>plylst_missing:
-            plylst_meta[sample['plylst_title']] = 1
+            chunk_one_hot[object_to_chunkidx[sample['plylst_title']]] = 1
             sample['include_plylst'] = True
-        sample['plylst_meta'] = plylst_meta
+        sample['chunk_one_hot'] = chunk_one_hot
         return sample
 
 class PlaylistDataset(Dataset):
     """Playlist target dataset."""
 
     def __init__(self, transform = Noise_p(0.5)):
-        with open(os.path.join(data_path, "train_to_idx.json"), 'r', encoding='utf-8') as f1:
-            train_to_idx = json.load(f1)
+        with open(os.path.join(data_path, "train_to_idx_chunk.json"), 'r', encoding='utf-8') as f1:
+            train_to_idx_chunk = json.load(f1)
 
-        self.training_idx_set = train_to_idx
+        self.training_idx_set = train_to_idx_chunk
         for data in self.training_idx_set:
             data['songs'] = np.array(data['songs']).astype(np.int32)
-            #data['tags'] = np.array(data['tags'])
+            data['tags'] = np.array(data['tags']).astype(np.int32)
             data['tags_indices'] = np.array(data['tags_indices']).astype(np.int32)
             data['songs_indices'] = np.array(data['songs_indices']).astype(np.int32)
             data['plylst_title'] = np.array(data['plylst_title']).astype(np.int32)
@@ -99,7 +125,10 @@ class PlaylistDataset(Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
+
+        #songs and tags are not intersect with song_idx and tag_idx
         songs= self.training_idx_set[idx]['songs']
+        tags = self.training_idx_set[idx]['tags']
         songs_idx = self.training_idx_set[idx]['songs_indices']
         tags_idx = self.training_idx_set[idx]['tags_indices']
         plylst_title = self.training_idx_set[idx]['plylst_title']
@@ -114,7 +143,7 @@ class PlaylistDataset(Dataset):
         input_song = np.array(songs)
 
         #playlist_vec: one hot vec of i'th playlist
-        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : torch.from_numpy(input_one_hot).type(torch.FloatTensor), 'input_song' : input_song,'input_tag_idx' : tags_idx, 'input_song_idx' : songs_idx ,'plylst_title' : plylst_title, 'include_plylst' : False}
+        sample = {'input_one_hot' : input_one_hot, 'target_one_hot' : torch.from_numpy(input_one_hot).type(torch.FloatTensor), 'input_song' : input_song,'input_tag_idx' : tags_idx, 'input_song_idx' : songs_idx, 'input_tag':tags ,'plylst_title' : plylst_title, 'include_plylst' : False}
         if self.transform:
             sample = self.transform(sample)
 

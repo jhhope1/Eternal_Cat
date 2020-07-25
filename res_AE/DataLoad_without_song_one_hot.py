@@ -53,8 +53,8 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
             noise_input_one_hot[noise_input_song_idx] = 1
             if random.random()>tag_missing_ply_false:
                 noise_input_one_hot[noise_input_tag_idx] = 1
-            
-        sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
+        sample['noise_img'] = torch.from_numpy(noise_input_one_hot)
+        sample['input_one_hot'] = np.concatenate((noise_input_one_hot[song_size:],sample['plylst_meta']))
         sample['noise_input_song'] = noise_input_song
         sample['noise_input_song_idx'] = noise_input_song_idx
         return sample
@@ -126,4 +126,4 @@ class ToTensor(object):
 
     def __call__(self, sample):
         meta_input_one_hot = torch.from_numpy(sample['meta_input_one_hot']).type(torch.FloatTensor)
-        return {'meta_input_one_hot':meta_input_one_hot,'target_one_hot':sample['target_one_hot']}
+        return {'meta_input_one_hot':meta_input_one_hot,'target_one_hot':sample['target_one_hot'], 'noise_img' : sample['noise_img']}
