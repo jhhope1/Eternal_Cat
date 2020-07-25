@@ -30,7 +30,6 @@ for _, data in enumerate(train):
     data['songs_indices'] = song_indices
     data['songs'] = songs
     data['tags_indices'] = tag_indices
-    data['plylst_title'] = title_indices
 
 with open(os.path.join(data_path, "train_to_idx_chunk.json"), 'w', encoding='utf-8') as f2:
     json.dump(train, f2, ensure_ascii=False)
