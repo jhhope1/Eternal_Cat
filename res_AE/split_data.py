@@ -9,8 +9,8 @@ import numpy as np
 from torch.utils import data as D
 from torch.utils.data.sampler import SubsetRandomSampler
 import random
-from DataLoad import PlaylistDataset
-import DataLoad
+from DataLoad_chunk import PlaylistDataset
+import DataLoad_chunk as DataLoad
 
 def splited_loader(validation_ratio = 0.1, test_ratio = 0.1, random_seed = 10, batch_size = 128):
     transformed_dataset = PlaylistDataset(transform=transforms.Compose([

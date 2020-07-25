@@ -23,17 +23,18 @@ with open(os.path.join(data_path,"res_entity_to_idx.json"), 'r', encoding='utf-8
     entity_to_idx = json.load(f4)
 with open(os.path.join(data_path,"res_letter_to_idx.json"), 'r', encoding='utf-8') as f5:
     letter_to_idx = json.load(f5)
-
+'''
 with open(os.path.join(data_path,"object_to_chunkidx.json"), 'r', encoding='utf-8') as f5:
     object_to_chunkidx = json.load(f5)
+'''
 with open(os.path.join(data_path,"idx_to_song.json"), 'r', encoding='utf-8') as f:
     idx_to_song = json.load(f)
-with open(os.path.join(data_path,"idx_to_tag.jsong"),'r', encoding='utf-8') as f:
+with open(os.path.join(data_path,"idx_to_tag.json"),'r', encoding='utf-8') as f:
     idx_to_tag = json.load(f)
-
+'''
 for obj in object_to_chunkidx:
     object_to_chunkidx[obj] = np.array(object_to_chunkidx[obj]).astype(np.int32)
-
+'''
 
 class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['include_plylst']' part
     def __init__(self, noise_p):
@@ -73,7 +74,7 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
         
         sample['noise_input_tag'] = noise_input_tag
         sample['noise_input_tag_idx'] = noise_input_tag_idx
-        sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
+        sample['input_one_hot'] = noise_input_one_hot
         sample['noise_input_song'] = noise_input_song
         sample['noise_input_song_idx'] = noise_input_song_idx
         return sample
@@ -113,8 +114,8 @@ class PlaylistDataset(Dataset):
 
         self.training_idx_set = train_to_idx_chunk
         for data in self.training_idx_set:
-            data['songs'] = np.array(data['songs']).astype(np.int32)
-            data['tags'] = np.array(data['tags']).astype(np.int32)
+            data['songs'] = np.array(data['songs'])
+            data['tags'] = np.array(data['tags'])
             data['tags_indices'] = np.array(data['tags_indices']).astype(np.int32)
             data['songs_indices'] = np.array(data['songs_indices']).astype(np.int32)
             data['plylst_title'] = np.array(data['plylst_title']).astype(np.int32)
