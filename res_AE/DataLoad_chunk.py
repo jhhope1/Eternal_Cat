@@ -26,13 +26,21 @@ with open(os.path.join(data_path,"res_letter_to_idx.json"), 'r', encoding='utf-8
 
 with open(os.path.join(data_path,"object_to_chunkidx.json"), 'r', encoding='utf-8') as f5:
     object_to_chunkidx = json.load(f5)
-with open(os.path.join(data_path,"idx_to_song.json"), 'r', encoding='utf-8') as f:
-    idx_to_song = json.load(f)
-with open(os.path.join(data_path,"idx_to_tag.jsong"),'r', encoding='utf-8') as f:
-    idx_to_tag = json.load(f)
-
 for obj in object_to_chunkidx:
     object_to_chunkidx[obj] = np.array(object_to_chunkidx[obj]).astype(np.int32)
+with open(os.path.join(data_path,"tag_to_chunkidx.json"), 'r', encoding='utf-8') as f5:
+    tag_to_chunkidx = json.load(f5)
+for obj in tag_to_chunkidx:
+    tag_to_chunkidx[obj] = np.array(tag_to_chunkidx[obj]).astype(np.int32)
+with open(os.path.join(data_path,"title_to_chunkidx.json"), 'r', encoding='utf-8') as f5:
+    title_to_chunkidx = json.load(f5)
+for obj in title_to_chunkidx:
+    title_to_chunkidx[obj] = np.array(title_to_chunkidx[obj]).astype(np.int32)
+with open(os.path.join(data_path,"idx_to_song.json"), 'r', encoding='utf-8') as f:
+    idx_to_song = json.load(f)
+with open(os.path.join(data_path,"idx_to_tag.json"),'r', encoding='utf-8') as f:
+    idx_to_tag = json.load(f)
+
 
 
 class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['include_plylst']' part
@@ -73,7 +81,7 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
         
         sample['noise_input_tag'] = noise_input_tag
         sample['noise_input_tag_idx'] = noise_input_tag_idx
-        sample['input_one_hot'] = np.concatenate((noise_input_one_hot,sample['plylst_meta']))
+        sample['input_one_hot'] = noise_input_one_hot
         sample['noise_input_song'] = noise_input_song
         sample['noise_input_song_idx'] = noise_input_song_idx
         return sample
@@ -83,12 +91,12 @@ class add_meta(object):
         for song in sample['noise_input_song']:
             sample['chunk_one_hot'][object_to_chunkidx[str(song)]] += 1
         for song_idx in sample['noise_input_song_idx']:
-            sample['chunk_one_hot'][object_to_chunkidx[idx_to_song(str(song_idx))]] += 1
+            sample['chunk_one_hot'][object_to_chunkidx[str(idx_to_song[str(song_idx)])]] += 1
 
         for tag in sample['noise_input_tag']:
-            sample['chunk_one_hot'][object_to_chunkidx[tag]] += 1
+            sample['chunk_one_hot'][tag_to_chunkidx[tag]] += 1
         for tag_idx in sample['noise_input_tag_idx']:
-            sample['chunk_one_hot'][object_to_chunkidx[idx_to_tag(str(tag_idx))]] += 1
+            sample['chunk_one_hot'][tag_to_chunkidx[idx_to_tag[str(tag_idx)]]] += 1
 
         sample['meta_input_one_hot'] = np.concatenate((sample['input_one_hot'] , sample['chunk_one_hot']))
         return sample
@@ -99,7 +107,7 @@ class add_plylst_meta(object):
         ######################################### should change plylst_title to real_playlist_title
         ######################################### should change train_to_idx_chunk
         if random.random()>plylst_missing:
-            chunk_one_hot[object_to_chunkidx[sample['plylst_title']]] = 1
+            chunk_one_hot[title_to_chunkidx[sample['plylst_title']]] = 1
             sample['include_plylst'] = True
         sample['chunk_one_hot'] = chunk_one_hot
         return sample
@@ -113,11 +121,10 @@ class PlaylistDataset(Dataset):
 
         self.training_idx_set = train_to_idx_chunk
         for data in self.training_idx_set:
-            data['songs'] = np.array(data['songs']).astype(np.int32)
-            data['tags'] = np.array(data['tags']).astype(np.int32)
+            data['songs'] = np.array(data['songs'])
+            data['tags'] = np.array(data['tags'])
             data['tags_indices'] = np.array(data['tags_indices']).astype(np.int32)
             data['songs_indices'] = np.array(data['songs_indices']).astype(np.int32)
-            data['plylst_title'] = np.array(data['plylst_title']).astype(np.int32)
         
         self.transform = transform
     def __len__(self):

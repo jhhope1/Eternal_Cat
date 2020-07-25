@@ -8,6 +8,10 @@ data_path = const.data_path
 
 with open(os.path.join(data_path, "train.json"), 'r', encoding='utf-8') as f1:
     train_data = json.load(f1)
+with open(os.path.join(data_path, "val.json"), 'r', encoding='utf-8') as f:
+    train_data += json.load(f)
+with open(os.path.join(data_path, "test.json"), 'r', encoding='utf-8') as f:
+    train_data += json.load(f)
 
 with open(os.path.join(data_path, "song_meta.json"), 'r', encoding='utf-8') as f3:
     song_meta = json.load(f3)
@@ -102,8 +106,7 @@ for song in song_meta:
 for pl in train_data:
     for tag in pl['tags']:
         song_chunker.gen_chunks(tag)
-    for title in pl['plylst_title']:
-        song_chunker.gen_chunks(title)
+    song_chunker.gen_chunks(pl['plylst_title'])
 
 song_chunker.do_filter(threshold = 100)
 print(len(song_chunker))
@@ -130,9 +133,15 @@ for pl in train_data:
     for tag in pl['tags']:
         if not tag_to_chunkidx.get(tag):
             tag_to_chunkidx[tag] = list(song_chunker.get_basket(tag))
+<<<<<<< HEAD
     for title in pl['plylst_title']:
         if not title_to_chunkidx.get(title):
             title_to_chunkidx[title] = list(song_chunker.get_basket(title))
+=======
+    
+    if not title_to_chunkidx.get(pl['plylst_title']):
+        title_to_chunkidx[pl['plylst_title']] = list(song_chunker.get_basket(pl['plylst_title']))
+>>>>>>> 10a0c5089ceec6bc609156d0a6d7f09b5715cc82
 
 with open(os.path.join(data_path,'object_to_chunkidx.json'), 'w', encoding='utf-8') as f:
     json.dump(song_to_chunkidx, f, ensure_ascii=False)
