@@ -71,12 +71,14 @@ class Noise_p(object):#warning: do add_plylst_meta first! or change 'sample['inc
             if random.random()>tag_missing_ply_true:
                 noise_input_one_hot[noise_input_tag_idx] = 1
             else:
+                noise_input_tag = []
                 noise_input_tag_idx = []
         else:
             noise_input_one_hot[noise_input_song_idx] = 1
             if random.random()>tag_missing_ply_false:
                 noise_input_one_hot[noise_input_tag_idx] = 1 
             else:
+                noise_input_tag = []
                 noise_input_tag_idx = []
         
         sample['noise_input_tag'] = noise_input_tag

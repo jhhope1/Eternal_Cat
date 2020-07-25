@@ -19,6 +19,7 @@ for _, data in enumerate(train):
     tag_indices = []
     title_indices = []
     songs = []
+    tags = []
     for song in data['songs']:
         if song_to_idx.get(str(song)) != None:
             song_indices.append(song_to_idx[str(song)])
@@ -27,9 +28,12 @@ for _, data in enumerate(train):
     for tag in data['tags']:
         if tag_to_idx.get(tag) != None:
             tag_indices.append(tag_to_idx[tag])
+        else:
+            tags.append(tag)
     data['songs_indices'] = song_indices
     data['songs'] = songs
     data['tags_indices'] = tag_indices
+    data['tags'] = tags
 
 with open(os.path.join(data_path, "train_to_idx_chunk.json"), 'w', encoding='utf-8') as f2:
     json.dump(train, f2, ensure_ascii=False)
