@@ -57,9 +57,9 @@ class Chunker(object):
             for i in range(max(0, len(name_trimmed) - chunk_len)):
                 chunk = name_trimmed[i:i+chunk_len]
                 self.add_key(chunk)
-        for korean_chunk_len in range(1, 2):
+        for korean_chunk_len in range(1, 3):
             for i in range(max(0, len(name_trimmed) - korean_chunk_len)):
-                chunk = name_trimmed[i:i+chunk_len]
+                chunk = name_trimmed[i:i+korean_chunk_len]
                 if is_korean(chunk):
                     self.add_key(chunk)
         for cjk in name_trimmed:
@@ -71,13 +71,13 @@ class Chunker(object):
         ret_idxset = set()
 
         for chunk_len in range(3, 5):
-            for i in range(max(0, len(name_trimmed) - chunk_len)):
+            for i in range(max(0, len(name_trimmed) - chunk_len + 1)):
                 chunk = name_trimmed[i:i+chunk_len]
                 if self.chunk_idx.get(chunk):
                     ret_idxset.add(self.chunk_idx[chunk])
-        for korean_chunk_len in range(1, 2):
-            for i in range(max(0, len(name_trimmed) - korean_chunk_len)):
-                chunk = name_trimmed[i:i+chunk_len]
+        for korean_chunk_len in range(1, 3):
+            for i in range(max(0, len(name_trimmed) - korean_chunk_len + 1)):
+                chunk = name_trimmed[i:i+korean_chunk_len]
                 if is_korean(chunk):
                     if self.chunk_idx.get(chunk):
                         ret_idxset.add(self.chunk_idx[chunk])
@@ -133,15 +133,9 @@ for pl in train_data:
     for tag in pl['tags']:
         if not tag_to_chunkidx.get(tag):
             tag_to_chunkidx[tag] = list(song_chunker.get_basket(tag))
-<<<<<<< HEAD
-    for title in pl['plylst_title']:
-        if not title_to_chunkidx.get(title):
-            title_to_chunkidx[title] = list(song_chunker.get_basket(title))
-=======
     
     if not title_to_chunkidx.get(pl['plylst_title']):
         title_to_chunkidx[pl['plylst_title']] = list(song_chunker.get_basket(pl['plylst_title']))
->>>>>>> 10a0c5089ceec6bc609156d0a6d7f09b5715cc82
 
 with open(os.path.join(data_path,'object_to_chunkidx.json'), 'w', encoding='utf-8') as f:
     json.dump(song_to_chunkidx, f, ensure_ascii=False)
