@@ -110,7 +110,7 @@ print(len(song_chunker))
 
 song_to_chunkidx = dict()
 tag_to_chunkidx = dict()
-pl_to_chunkidx = dict()
+title_to_chunkidx = dict()
 
 for song in song_meta:
     chunkset = song_chunker.get_basket(song['song_name'])
@@ -129,10 +129,10 @@ for song in song_meta:
 for pl in train_data:
     for tag in pl['tags']:
         if not tag_to_chunkidx.get(tag):
-            tag_to_chunkidx[tag] = song_chunker.get_basket(tag)
+            tag_to_chunkidx[tag] = list(song_chunker.get_basket(tag))
     for title in pl['plylst_title']:
         if not title_to_chunkidx.get(title):
-            title_to_chunkidx[title] = song_chunker.get_basket(title)
+            title_to_chunkidx[title] = list(song_chunker.get_basket(title))
 
 with open(os.path.join(data_path,'object_to_chunkidx.json'), 'w', encoding='utf-8') as f:
     json.dump(song_to_chunkidx, f, ensure_ascii=False)
