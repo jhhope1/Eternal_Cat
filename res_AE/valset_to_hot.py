@@ -123,10 +123,6 @@ with open_utf8(val_file, 'r') as f3, open_utf8(res_file, 'w') as f4:
             
             #tag extraction and tensorization
             tag_set = set(val_list[j]['tags'])
-            for tag in tag_set:
-                for l in tag:
-                    if l in letter_to_idx:
-                        input_one_hot[j - st][output_dim + letter_to_idx[l]] = 1
             tag_list_refined = list(tag_set.intersection(tag_to_idx_keyset))
             tag_idxlist = [tag_to_idx[tname] for tname in tag_list_refined]
             input_one_hot[j - st][tag_idxlist] = 1
