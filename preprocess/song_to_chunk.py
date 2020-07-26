@@ -19,7 +19,11 @@ with open(os.path.join(data_path, "song_meta.json"), 'r', encoding='utf-8') as f
 with open(os.path.join(data_path, 'genre_gn_all.json'), 'r', encoding='utf-8') as f:
     genre_to_name = json.load(f)
 
-garbage = u'.,?!#_$%^&*}{( \t][-;:)/:‘’\"\'+~:˸'
+def is_english(s):
+    for c in s:
+        if ord('a') <= ord(c) <= ord('z'): pass
+        else: return False
+    return True
 
 def is_korean(s):
     for c in s:
@@ -53,11 +57,12 @@ class Chunker(object):
 
     def gen_chunks(self, target_string):
         name_trimmed = ''.join([c for c in target_string.lower() if c.isalpha()])
-        for chunk_len in range(3, 5):
+        for chunk_len in range(3, 4):
             for i in range(max(0, len(name_trimmed) - chunk_len)):
                 chunk = name_trimmed[i:i+chunk_len]
-                self.add_key(chunk)
-        for korean_chunk_len in range(1, 3):
+                if is_english(chunk):
+                    self.add_key(chunk)
+        for korean_chunk_len in range(2, 3):
             for i in range(max(0, len(name_trimmed) - korean_chunk_len)):
                 chunk = name_trimmed[i:i+korean_chunk_len]
                 if is_korean(chunk):
@@ -70,11 +75,12 @@ class Chunker(object):
         name_trimmed = ''.join([c for c in target_string.lower() if c.isalpha()])
         ret_idxset = set()
 
-        for chunk_len in range(3, 5):
+        for chunk_len in range(3, 4):
             for i in range(max(0, len(name_trimmed) - chunk_len + 1)):
                 chunk = name_trimmed[i:i+chunk_len]
-                if self.chunk_idx.get(chunk):
-                    ret_idxset.add(self.chunk_idx[chunk])
+                if is_english(chunk):
+                    if self.chunk_idx.get(chunk):
+                        ret_idxset.add(self.chunk_idx[chunk])
         for korean_chunk_len in range(1, 3):
             for i in range(max(0, len(name_trimmed) - korean_chunk_len + 1)):
                 chunk = name_trimmed[i:i+korean_chunk_len]
@@ -90,25 +96,28 @@ class Chunker(object):
 song_chunker = Chunker()
 
 
-for song in song_meta:
-    song_chunker.gen_chunks(song['song_name'])
-    if song.get('album_name'):
-        song_chunker.gen_chunks(song['album_name'])
-    for genre in song['song_gn_gnr_basket']:
-        if not genre_to_name.get(genre):
-            continue
-        song_chunker.gen_chunks(genre_to_name[genre])
-    for genre in song['song_gn_dtl_gnr_basket']:  
-        if not genre_to_name.get(genre):
-            continue  
-        song_chunker.gen_chunks(genre_to_name[genre])
-
 for pl in train_data:
+    for song_idx in pl['songs']:
+        song = song_meta[song_idx]
+        song_chunker.gen_chunks(song['song_name'])
+        if song.get('album_name'):
+            song_chunker.gen_chunks(song['album_name'])
+        if song.get('artist_name'):
+            song_chunker.gen_chunks(song['artist_name'])
+
+        for genre in song['song_gn_gnr_basket']:
+            if not genre_to_name.get(genre):
+                continue
+            song_chunker.gen_chunks(genre_to_name[genre])
+        for genre in song['song_gn_dtl_gnr_basket']:  
+            if not genre_to_name.get(genre):
+                continue  
+            song_chunker.gen_chunks(genre_to_name[genre])
     for tag in pl['tags']:
         song_chunker.gen_chunks(tag)
     song_chunker.gen_chunks(pl['plylst_title'])
 
-song_chunker.do_filter(threshold = 100)
+song_chunker.do_filter(threshold = 50)
 print(len(song_chunker))
 
 song_to_chunkidx = dict()
@@ -119,6 +128,8 @@ for song in song_meta:
     chunkset = song_chunker.get_basket(song['song_name'])
     if song.get('album_name'):
         chunkset = chunkset.union(song_chunker.get_basket(song['album_name']))
+    if song.get('artist_name'):
+        chunkset = chunkset.union(song_chunker.get_basket(song['artist_name']))
     for genre in song['song_gn_gnr_basket']:
         if not genre_to_name.get(genre):
             continue
@@ -145,3 +156,6 @@ with open(os.path.join(data_path, 'tag_to_chunkidx.json'), 'w', encoding='utf-8'
 
 with open(os.path.join(data_path, 'title_to_chunkidx.json'), 'w', encoding='utf-8') as f:
     json.dump(title_to_chunkidx, f, ensure_ascii=False)
+
+with open(os.path.join(data_path, 'chunk_to_idx.json'), 'w', encoding='utf-8') as f:
+    json.dump(song_chunker.chunk_idx, f, ensure_ascii=False)

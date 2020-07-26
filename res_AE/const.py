@@ -14,18 +14,21 @@ extract_tag = 10
 aug_step = 0 #blobfusad
 epochs = 1000
 log_interval = 100
-learning_rate = 2e-4
-D_ = 300
+learning_rate = 1e-3
+D_ = 606
 weight_decay = 1e-10
-layer_sizes = (input_dim,D_,D_,D_,output_dim)
+layer_sizes = (input_dim,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,D_,output_dim)
 dropout_p = 0.0
 is_res = True
 aug_step = 0
 PARENT_PATH = os.path.dirname(os.path.dirname(__file__))
-data_path = os.path.join(PARENT_PATH, 'data')
-
-data_path = os.path.join(PARENT_PATH, 'data')
- 
+try:
+    import google.colab
+except:
+    data_path = os.path.join(PARENT_PATH, 'data')
+else:
+    data_path = os.path.join(PARENT_PATH, 'drive/Shared drives/Eternal_Cat/data')
+    
 model_PATH = os.path.join(data_path, './res_AE_weight'+str(layer_sizes)+'res'+str(is_res)+'dp'+str(dropout_p)+'.pth')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 steps = 10
@@ -36,3 +39,6 @@ def show_vars():
     print('input_dim = ', input_dim)
     print('output_dim = ', output_dim)
     print('song_size = ', song_size)
+
+def refine_string(s):
+    return ''.join([c for c in target_string.lower() if c.isalpha()])
